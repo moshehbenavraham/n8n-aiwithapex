@@ -1,0 +1,25 @@
+{
+  "version": "2.0",
+  "project_name": "n8n",
+  "description": "Production-grade n8n installation on local WSL2 Ubuntu using Docker Compose with PostgreSQL, Redis, and worker scaling for maximum performance",
+  "current_phase": 0,
+  "current_session": null,
+  "phases": {
+    "0": {
+      "name": "Foundation and Core Infrastructure",
+      "description": "WSL2 optimization, Docker installation, project configuration, and n8n stack deployment with PostgreSQL, Redis, and queue-based workers",
+      "status": "in_progress",
+      "session_count": 4
+    }
+  },
+  "completed_sessions": [
+    "phase00-session01-wsl2-environment-optimization"
+  ],
+  "next_session_history": [
+    {
+      "date": "2025-12-25",
+      "session": "phase00-session01-wsl2-environment-optimization",
+      "status": "completed"
+    }
+  ]
+}
