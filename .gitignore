@@ -1,0 +1,19 @@
+# Environment variables (contains secrets)
+.env
+
+# Data directories (persistent container data)
+data/
+
+# Backup files
+backups/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
