@@ -125,8 +125,8 @@ This system delivers the product via phases. Each phase is implemented via multi
 
 | Phase | Name | Sessions | Status |
 |-------|------|----------|--------|
-| 00 | Foundation and Core Infrastructure | 4 | Not Started |
-| 01 | Operations and Optimization | TBD | Not Started |
+| 00 | Foundation and Core Infrastructure | 4 | Complete |
+| 01 | Operations and Optimization | 5 | Not Started |
 
 ## Phase 00: Foundation and Core Infrastructure
 
@@ -154,15 +154,23 @@ Session specifications located in `.spec_system/PRD/phase_00/`.
 
 ### Objectives
 
-1. Create and schedule automated backup procedures
-2. Implement worker scaling configuration
-3. Configure PostgreSQL performance tuning
+1. Create and schedule automated backup procedures with retention policies
+2. Implement worker scaling configuration (5+ workers)
+3. Configure PostgreSQL performance tuning for production workloads
 4. Establish monitoring and health check procedures
-5. Document troubleshooting and recovery procedures
+5. Harden production configuration and document troubleshooting/recovery procedures
 
-### Sessions (To Be Defined)
+### Sessions
 
-Sessions are defined via `/phasebuild` as `session_NN_name.md` stubs under `.spec_system/PRD/phase_01/`.
+| Session | Name | Est. Tasks |
+|---------|------|------------|
+| 01 | Backup Automation and Data Protection | ~20-25 |
+| 02 | Worker Scaling and Queue Optimization | ~20-25 |
+| 03 | PostgreSQL Performance Tuning | ~15-20 |
+| 04 | Monitoring and Health Management | ~20-25 |
+| 05 | Production Hardening and Documentation | ~20-25 |
+
+Session specifications located in `.spec_system/PRD/phase_01/`.
 
 ## Technical Stack
 

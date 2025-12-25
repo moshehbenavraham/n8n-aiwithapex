@@ -4,8 +4,13 @@
 # Data directories (persistent container data)
 data/
 
-# Backup files
-backups/
+# Backup files (keep directory structure)
+backups/**/*
+!backups/**/.gitkeep
+
+# Log files (keep directory structure)
+logs/**/*
+!logs/.gitkeep
 
 # IDE and editor files
 .idea/
