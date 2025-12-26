@@ -1,7 +1,7 @@
 ---
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.11-alpine
     container_name: n8n-postgres
     restart: unless-stopped
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
@@ -23,7 +23,7 @@ services:
       - n8n-network
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.7-alpine
     container_name: n8n-redis
     restart: unless-stopped
     command: redis-server --port ${REDIS_PORT}
@@ -39,7 +39,7 @@ services:
       - n8n-network
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.1.4
     container_name: n8n-main
     restart: unless-stopped
     ports:
@@ -92,7 +92,7 @@ services:
       - n8n-network
 
   n8n-worker:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.1.4
     restart: unless-stopped
     command: worker
     deploy:

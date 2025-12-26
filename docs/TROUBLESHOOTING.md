@@ -136,10 +136,44 @@ HTTP endpoint not responding?
 
 **Cause**: WSL2 kernel setting not optimal for Redis
 
-**Fix** (Session 05 will address permanently):
+**Temporary Fix** (resets on WSL restart):
 ```bash
-# Temporary fix (resets on WSL restart)
 sudo sysctl vm.overcommit_memory=1
+```
+
+**Permanent Fix** (persists across restarts):
+
+1. Create sysctl configuration file:
+   ```bash
+   sudo tee /etc/sysctl.d/99-redis.conf << 'EOF'
+   # Redis optimization for WSL2
+   # Prevents Redis background save failures under memory pressure
+   vm.overcommit_memory = 1
+   EOF
+   ```
+
+2. Apply the setting immediately:
+   ```bash
+   sudo sysctl -p /etc/sysctl.d/99-redis.conf
+   ```
+
+3. Verify the setting:
+   ```bash
+   sysctl vm.overcommit_memory
+   # Should output: vm.overcommit_memory = 1
+   ```
+
+4. Restart Redis to clear warning from logs:
+   ```bash
+   docker compose restart redis
+   ```
+
+**Note**: This fix requires sudo access. The sysctl.d configuration will persist across WSL restarts.
+
+**Verification**: After applying, check Redis logs for the warning:
+```bash
+docker compose logs redis --tail 50 | grep -i overcommit
+# Should return no results (warning cleared)
 ```
 
 ### 2. PostgreSQL Connection Refused
