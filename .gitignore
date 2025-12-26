@@ -18,7 +18,7 @@ backups/**/*
 
 # Log files (keep directory structure)
 logs/**/*
-!logs/.gitkeep
+!logs/**/.gitkeep
 
 # Database dumps (outside of backups/)
 *.sql.gz
