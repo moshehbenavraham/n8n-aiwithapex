@@ -1,8 +1,13 @@
 # Environment variables (contains secrets)
+# Covers: .env, .env.local, .env.production, .env.development, etc.
 .env
+.env.*
+.env.*.local
 
 # Backup files (may contain secrets)
 *.bak
+*.backup
+*.orig
 
 # Data directories (persistent container data)
 data/
@@ -15,6 +20,22 @@ backups/**/*
 logs/**/*
 !logs/.gitkeep
 
+# Database dumps (outside of backups/)
+*.sql.gz
+*.dump
+*.dump.gz
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*.crt
+
+# Docker
+.docker/config.json
+
 # IDE and editor files
 .idea/
 .vscode/
@@ -25,3 +46,8 @@ logs/**/*
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
