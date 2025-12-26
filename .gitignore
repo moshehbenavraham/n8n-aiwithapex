@@ -9,8 +9,12 @@
 *.backup
 *.orig
 
-# Data directories (persistent container data)
-data/
+# Data directories (persistent container data, keep directory structure)
+# Ignore all files but preserve directories and .gitkeep
+data/**
+!data/
+!data/**/
+!data/**/.gitkeep
 
 # Backup files (keep directory structure)
 backups/**/*
