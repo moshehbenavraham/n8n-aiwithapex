@@ -70,6 +70,8 @@ services:
       N8N_METRICS: ${N8N_METRICS}
       # Security
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
+      # Worker offloading
+      OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data/n8n/files:/home/node/.n8n/files
@@ -89,9 +91,13 @@ services:
 
   n8n-worker:
     image: n8nio/n8n:latest
-    container_name: n8n-worker
     restart: unless-stopped
     command: worker
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          memory: 512M
     environment:
       # Database
       DB_TYPE: ${DB_TYPE}
@@ -109,6 +115,9 @@ services:
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
+      QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      # Worker scaling
+      EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data/n8n/files:/home/node/.n8n/files

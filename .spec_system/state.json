@@ -23,7 +23,8 @@
     "phase00-session02-docker-engine-installation",
     "phase00-session03-project-structure-and-configuration",
     "phase00-session04-service-deployment-and-verification",
-    "phase01-session01-backup-automation"
+    "phase01-session01-backup-automation",
+    "phase01-session02-worker-scaling"
   ],
   "next_session_history": [
     {
@@ -49,6 +50,11 @@
     {
       "date": "2025-12-26",
       "session": "phase01-session01-backup-automation",
+      "status": "completed"
+    },
+    {
+      "date": "2025-12-26",
+      "session": "phase01-session02-worker-scaling",
       "status": "completed"
     }
   ]
