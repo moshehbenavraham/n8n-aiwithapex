@@ -1,0 +1,346 @@
+# Troubleshooting Guide
+
+Decision tree and common fixes for n8n stack issues.
+
+## Quick Diagnosis
+
+Run the system status dashboard first:
+
+```bash
+./scripts/system-status.sh
+```
+
+This provides an overview of:
+- Container health
+- Resource usage
+- Queue status
+- Endpoint availability
+
+## Decision Tree
+
+### Container Not Running
+
+```
+Container not running?
+|
++-> Check docker compose status
+|   $ docker compose ps
+|
++-> Is container exited?
+|   |
+|   +-> Yes: Check exit code and logs
+|   |   $ docker compose logs <service> --tail 50
+|   |
+|   +-> No: Container may be restarting
+|       $ docker compose logs <service> -f
+|
++-> Restart the service
+    $ docker compose restart <service>
+```
+
+### Container Unhealthy
+
+```
+Container shows (unhealthy)?
+|
++-> Check health check logs
+|   $ docker inspect <container> --format='{{json .State.Health}}'
+|
++-> Service-specific checks:
+|   |
+|   +-> postgres: Check connections
+|   |   $ docker exec n8n-postgres pg_isready -U n8n
+|   |
+|   +-> redis: Check ping
+|   |   $ docker exec n8n-redis redis-cli -p 6386 PING
+|   |
+|   +-> n8n/worker: Check healthz endpoint
+|       $ curl http://localhost:5678/healthz
+|
++-> Restart if needed
+    $ docker compose restart <service>
+```
+
+### High Memory Usage
+
+```
+Memory above 80%?
+|
++-> Identify consumer
+|   $ docker stats --no-stream | sort -k4 -h
+|
++-> Is it a specific container?
+|   |
+|   +-> Worker: May have memory leak
+|   |   $ docker compose restart n8n-worker
+|   |
+|   +-> n8n main: Check for large workflows
+|   |   Review active executions in UI
+|   |
+|   +-> postgres: Check for long queries
+|       $ docker exec n8n-postgres psql -U n8n -c "SELECT * FROM pg_stat_activity WHERE state = 'active';"
+|
++-> System-wide high memory?
+    Consider reducing worker replicas
+    Edit docker-compose.yml: replicas: 3
+```
+
+### Workflows Not Executing
+
+```
+Workflows stuck or not running?
+|
++-> Check queue status
+|   $ ./scripts/system-status.sh
+|
++-> High waiting count?
+|   |
+|   +-> Workers may be stuck
+|       $ ./scripts/view-logs.sh -s worker -n 100
+|       $ docker compose restart n8n-worker
+|
++-> Failed jobs in queue?
+|   |
+|   +-> Check worker logs for errors
+|   |   $ ./scripts/view-logs.sh -s worker -f
+|   |
+|   +-> Retry from n8n UI or clear failed jobs
+|
++-> Check n8n main is healthy
+    $ curl http://localhost:5678/healthz
+```
+
+### Endpoint Not Responding
+
+```
+HTTP endpoint not responding?
+|
++-> Check container is running
+|   $ docker compose ps
+|
++-> Check port binding
+|   $ docker port n8n-main 5678
+|
++-> Test from inside container
+|   $ docker exec n8n-main curl -s http://localhost:5678/healthz
+|
++-> Check for port conflicts
+    $ netstat -tlnp | grep 5678
+```
+
+## Common Issues and Fixes
+
+### 1. Redis vm.overcommit_memory Warning
+
+**Symptom**: Redis logs show warning about vm.overcommit_memory
+
+**Cause**: WSL2 kernel setting not optimal for Redis
+
+**Fix** (Session 05 will address permanently):
+```bash
+# Temporary fix (resets on WSL restart)
+sudo sysctl vm.overcommit_memory=1
+```
+
+### 2. PostgreSQL Connection Refused
+
+**Symptom**: n8n cannot connect to PostgreSQL
+
+**Checks**:
+```bash
+# Is postgres running?
+docker compose ps postgres
+
+# Check postgres logs
+./scripts/view-logs.sh -s postgres -n 50
+
+# Test connection
+docker exec n8n-postgres pg_isready -U n8n
+```
+
+**Fixes**:
+- Restart postgres: `docker compose restart postgres`
+- Check disk space: `df -h`
+- Check postgres data volume: `docker volume ls`
+
+### 3. Workers Not Processing Jobs
+
+**Symptom**: Jobs pile up in queue, workers not processing
+
+**Checks**:
+```bash
+# Check worker health
+docker compose ps n8n-worker
+
+# Check worker logs
+./scripts/view-logs.sh -s worker -f
+
+# Check queue status
+./scripts/system-status.sh
+```
+
+**Fixes**:
+- Restart workers: `docker compose restart n8n-worker`
+- Check Redis connectivity from worker container
+- Verify QUEUE_BULL_REDIS_HOST environment variable
+
+### 4. Disk Space Running Low
+
+**Symptom**: Containers failing, logs not writing
+
+**Checks**:
+```bash
+# System disk
+df -h
+
+# Docker disk usage
+docker system df
+
+# Backup directory
+du -sh backups/
+```
+
+**Fixes**:
+```bash
+# Clean old backups
+./scripts/cleanup-backups.sh
+
+# Prune Docker
+docker system prune -f
+
+# Remove old images
+docker image prune -a
+```
+
+### 5. Container Keeps Restarting
+
+**Symptom**: Container in restart loop
+
+**Checks**:
+```bash
+# Check restart count
+docker inspect <container> --format='{{.RestartCount}}'
+
+# Check last exit code
+docker inspect <container> --format='{{.State.ExitCode}}'
+
+# Check logs
+docker compose logs <service> --tail 100
+```
+
+**Common Exit Codes**:
+| Code | Meaning |
+|------|---------|
+| 0 | Normal exit |
+| 1 | Application error |
+| 137 | OOM killed (SIGKILL) |
+| 139 | Segmentation fault |
+| 143 | Graceful termination (SIGTERM) |
+
+### 6. n8n Web UI Not Loading
+
+**Symptom**: Browser shows error or timeout
+
+**Checks**:
+```bash
+# Check n8n container
+docker compose ps n8n
+
+# Check healthz
+curl -v http://localhost:5678/healthz
+
+# Check n8n logs
+./scripts/view-logs.sh -s n8n -n 100
+```
+
+**Fixes**:
+- Restart n8n: `docker compose restart n8n`
+- Check for JavaScript errors in browser console
+- Clear browser cache
+
+### 7. Database Connections Exhausted
+
+**Symptom**: "too many connections" errors in logs
+
+**Checks**:
+```bash
+# Check active connections
+docker exec n8n-postgres psql -U n8n -c "SELECT count(*) FROM pg_stat_activity;"
+
+# Check max connections
+docker exec n8n-postgres psql -U n8n -c "SHOW max_connections;"
+```
+
+**Fixes**:
+- Restart n8n and workers to release connections
+- Increase max_connections in postgresql.conf
+- Check for connection leaks in workflows
+
+### 8. Slow Workflow Execution
+
+**Symptom**: Workflows taking longer than expected
+
+**Checks**:
+```bash
+# Check resource usage
+./scripts/monitor-resources.sh
+
+# Check queue status
+./scripts/system-status.sh
+
+# Check for high CPU containers
+docker stats --no-stream
+```
+
+**Fixes**:
+- Scale workers if CPU is bottleneck
+- Check for inefficient workflow logic
+- Review external API timeouts
+
+## Emergency Procedures
+
+### Full Stack Restart
+
+When everything seems broken:
+
+```bash
+# Stop all containers
+docker compose down
+
+# Wait a moment
+sleep 5
+
+# Start fresh
+docker compose up -d
+
+# Watch logs
+./scripts/view-logs.sh -f
+```
+
+### Data Recovery
+
+If data corruption suspected:
+
+```bash
+# Stop services
+docker compose down
+
+# Restore from latest backup
+./scripts/restore-postgres.sh backups/postgres/latest.sql.gz
+
+# Start services
+docker compose up -d
+```
+
+## Getting Help
+
+1. Check logs first: `./scripts/view-logs.sh -s <service> -n 200`
+2. Run full status: `./scripts/system-status.sh`
+3. Check this troubleshooting guide
+4. Review n8n documentation: https://docs.n8n.io
+
+## Related Documentation
+
+- [MONITORING.md](MONITORING.md) - Monitoring runbook
+- [SCALING.md](SCALING.md) - Worker scaling configuration
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
