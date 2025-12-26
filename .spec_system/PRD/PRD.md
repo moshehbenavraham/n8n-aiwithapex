@@ -126,7 +126,7 @@ This system delivers the product via phases. Each phase is implemented via multi
 | Phase | Name | Sessions | Status |
 |-------|------|----------|--------|
 | 00 | Foundation and Core Infrastructure | 4 | Complete |
-| 01 | Operations and Optimization | 5 | Not Started |
+| 01 | Operations and Optimization | 5 | Complete |
 
 ## Phase 00: Foundation and Core Infrastructure
 
