@@ -23,7 +23,11 @@ HEALTHZ_TIMEOUT=5
 EXPECTED_WORKERS=5
 
 # Container names (actual Docker container names)
-REQUIRED_CONTAINERS=("n8n-postgres" "n8n-redis" "n8n-main")
+REQUIRED_CONTAINERS=("n8n-postgres" "n8n-redis" "n8n-main" "n8n-ngrok")
+
+# ngrok API configuration
+NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4040}/api"
+NGROK_TIMEOUT=5
 
 # -----------------------------------------------------------------------------
 # Functions
@@ -212,6 +216,49 @@ check_worker_replicas() {
 	return 0
 }
 
+# T014/T015: Check ngrok tunnel connectivity
+check_ngrok_tunnel() {
+	log_info "Checking ngrok tunnel..."
+
+	# Check if ngrok API is reachable
+	local http_code
+	http_code=$(curl -sf -o /dev/null -w "%{http_code}" --max-time "$NGROK_TIMEOUT" "${NGROK_API_URL}/tunnels" 2>/dev/null)
+	local curl_exit=$?
+
+	if [[ $curl_exit -ne 0 ]]; then
+		if [[ $curl_exit -eq 28 ]]; then
+			log_error "ngrok API timed out after ${NGROK_TIMEOUT}s"
+		else
+			log_error "ngrok API unreachable (curl exit: $curl_exit)"
+		fi
+		return 1
+	fi
+
+	if [[ "$http_code" != "200" ]]; then
+		log_error "ngrok API returned HTTP $http_code"
+		return 1
+	fi
+
+	# Check for active tunnels
+	local tunnel_data
+	tunnel_data=$(curl -sf --max-time "$NGROK_TIMEOUT" "${NGROK_API_URL}/tunnels" 2>/dev/null)
+
+	local tunnel_count
+	tunnel_count=$(echo "$tunnel_data" | jq -r '.tunnels | length' 2>/dev/null)
+
+	if [[ -z "$tunnel_count" ]] || [[ "$tunnel_count" == "null" ]] || [[ "$tunnel_count" -eq 0 ]]; then
+		log_error "No active ngrok tunnels found"
+		return 1
+	fi
+
+	# Get tunnel URL for logging
+	local tunnel_url
+	tunnel_url=$(echo "$tunnel_data" | jq -r '.tunnels[0].public_url // "unknown"' 2>/dev/null)
+
+	log_success "ngrok tunnel active: $tunnel_url ($tunnel_count tunnel(s))"
+	return 0
+}
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
@@ -242,6 +289,13 @@ main() {
 
 	# Check worker replicas
 	if ! check_worker_replicas; then
+		if [[ $OVERALL_STATUS -eq 0 ]]; then
+			OVERALL_STATUS=2
+		fi
+	fi
+
+	# Check ngrok tunnel
+	if ! check_ngrok_tunnel; then
 		if [[ $OVERALL_STATUS -eq 0 ]]; then
 			OVERALL_STATUS=2
 		fi

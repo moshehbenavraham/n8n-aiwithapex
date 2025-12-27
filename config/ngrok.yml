@@ -1,0 +1,15 @@
+# =============================================================================
+# ngrok.yml - ngrok Tunnel Configuration for n8n
+# =============================================================================
+# Description: Configures ngrok tunnel to forward external HTTPS traffic
+#              to the n8n container on the internal Docker network
+# Documentation: docs/TUNNELS.md
+# =============================================================================
+
+version: 2
+
+tunnels:
+  n8n:
+    proto: http
+    addr: n8n:5678
+    domain: n8n.aiwithapex.ngrok.dev
