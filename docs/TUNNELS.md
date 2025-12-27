@@ -6,6 +6,8 @@ This document describes the ngrok tunnel integration for external webhook access
 
 ngrok provides a secure tunnel that forwards external HTTPS traffic to the n8n instance running inside Docker. This enables webhooks from external services (Slack, GitHub, payment processors, etc.) to reach n8n workflows.
 
+The configuration uses a **multi-service architecture** that supports multiple endpoints with independent traffic policies. Each service can have its own custom domain and authentication rules.
+
 ## Architecture
 
 ```
@@ -52,10 +54,13 @@ ngrok provides a secure tunnel that forwards external HTTPS traffic to the n8n i
 
 | File | Purpose |
 |------|---------|
-| `config/ngrok.yml` | ngrok endpoint configuration (v3 format) |
+| `config/ngrok.yml` | ngrok endpoint configuration (v3 multi-service format) |
 | `config/ngrok.yml.v2.bak` | Backup of previous v2 configuration |
+| `config/ngrok.yml.pre-multiservice.bak` | Backup of single-endpoint config |
 | `docker-compose.yml` | ngrok service definition |
 | `.env` | Environment variables including ngrok settings |
+| `scripts/tunnel-manage.sh` | Unified tunnel management script |
+| `scripts/tunnel-status.sh` | Tunnel status display (used by tunnel-manage.sh) |
 
 ### ngrok.yml Configuration (v3 Format)
 
@@ -131,9 +136,30 @@ This is achieved using a CEL (Common Expression Language) expression that exclud
 
 ## Monitoring
 
+### Tunnel Management Script
+
+The unified tunnel-manage.sh script provides all tunnel operations:
+
+```bash
+# Check tunnel status
+./scripts/tunnel-manage.sh status
+
+# Start the tunnel
+./scripts/tunnel-manage.sh start
+
+# Stop the tunnel
+./scripts/tunnel-manage.sh stop
+
+# Restart the tunnel
+./scripts/tunnel-manage.sh restart
+
+# Show help
+./scripts/tunnel-manage.sh --help
+```
+
 ### Tunnel Status Script
 
-Check tunnel status:
+For detailed status with JSON output:
 ```bash
 ./scripts/tunnel-status.sh
 ./scripts/tunnel-status.sh --json
@@ -217,11 +243,15 @@ Access the ngrok web inspector for request debugging:
 ## Common Commands
 
 ```bash
-# View ngrok logs
-docker logs n8n-ngrok
+# Tunnel management (preferred)
+./scripts/tunnel-manage.sh start
+./scripts/tunnel-manage.sh stop
+./scripts/tunnel-manage.sh status
+./scripts/tunnel-manage.sh restart
 
-# Restart tunnel
-docker compose restart ngrok
+# View ngrok logs
+./scripts/view-logs.sh -s ngrok
+docker logs n8n-ngrok
 
 # Check tunnel status
 ./scripts/tunnel-status.sh
@@ -229,6 +259,58 @@ docker compose restart ngrok
 # View live requests (requires jq)
 curl -s http://localhost:4040/api/requests/http | jq '.requests[:5]'
 ```
+
+## Multi-Service Architecture
+
+The ngrok configuration supports multiple service endpoints. Each endpoint is defined with:
+
+- **name**: Unique identifier for the endpoint
+- **url**: Public ngrok custom domain URL
+- **upstream**: Internal Docker service address
+- **traffic_policy**: Per-endpoint authentication and access rules
+
+### Current Endpoints
+
+| Endpoint | URL | Backend | Status |
+|----------|-----|---------|--------|
+| n8n | https://n8n.aiwithapex.ngrok.dev | http://n8n:5678 | Active |
+| ollama | https://ollama.aiwithapex.ngrok.dev | http://ollama:11434 | Template (inactive) |
+
+### Adding New Services
+
+To add a new service endpoint:
+
+1. **Add Docker service** to docker-compose.yml
+2. **Configure ngrok endpoint** in config/ngrok.yml:
+   ```yaml
+   - name: service-name
+     url: https://service.yourdomain.ngrok.dev
+     upstream:
+       url: http://service:port
+     traffic_policy:
+       on_http_request:
+         - name: "Require OAuth"
+           expressions:
+             - "true"
+           actions:
+             - type: oauth
+               config:
+                 provider: google
+   ```
+3. **Restart ngrok**: `./scripts/tunnel-manage.sh restart`
+4. **Verify**: `./scripts/tunnel-manage.sh status`
+
+### Ollama Integration (Future)
+
+A template for Ollama LLM service is included but commented out. To enable:
+
+1. Add Ollama service to docker-compose.yml
+2. Configure ngrok custom domain for Ollama
+3. Uncomment the Ollama endpoint in config/ngrok.yml
+4. Update domain and settings as needed
+5. Restart ngrok
+
+**Memory Note**: Ollama requires 4GB+ RAM for most LLM models. Ensure WSL2 has sufficient memory allocation before enabling.
 
 ## Security Notes
 

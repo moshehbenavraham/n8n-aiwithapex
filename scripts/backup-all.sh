@@ -98,6 +98,31 @@ backup_env_file() {
 	fi
 }
 
+backup_ngrok_config() {
+	log_info "Backing up ngrok configuration"
+
+	NGROK_CONFIG="${PROJECT_DIR}/config/ngrok.yml"
+	NGROK_BACKUP_DIR="${BACKUP_DIR}/ngrok"
+	TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+	NGROK_BACKUP_FILE="${NGROK_BACKUP_DIR}/ngrok_${TIMESTAMP}.yml"
+
+	if [[ ! -f "$NGROK_CONFIG" ]]; then
+		log_warn "ngrok.yml not found at ${NGROK_CONFIG} - skipping"
+		return 0
+	fi
+
+	mkdir -p "$NGROK_BACKUP_DIR"
+
+	if cp "$NGROK_CONFIG" "$NGROK_BACKUP_FILE"; then
+		BACKUP_SIZE=$(du -h "$NGROK_BACKUP_FILE" | cut -f1)
+		log_success "ngrok config backup completed: ${NGROK_BACKUP_FILE} (${BACKUP_SIZE})"
+		return 0
+	else
+		log_error "Failed to backup ngrok configuration"
+		return 1
+	fi
+}
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
@@ -153,6 +178,15 @@ main() {
 	# Backup environment file
 	log_info "Running: env file backup"
 	if backup_env_file; then
+		((SUCCEEDED++))
+	else
+		((FAILED++))
+	fi
+	((TOTAL++))
+
+	# Backup ngrok configuration
+	log_info "Running: ngrok config backup"
+	if backup_ngrok_config; then
 		((SUCCEEDED++))
 	else
 		((FAILED++))

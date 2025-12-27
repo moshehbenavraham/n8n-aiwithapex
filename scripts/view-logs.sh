@@ -15,7 +15,7 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 
 # Valid services
-VALID_SERVICES=("postgres" "redis" "n8n" "worker" "all")
+VALID_SERVICES=("postgres" "redis" "n8n" "worker" "ngrok" "all")
 
 # Default settings
 SERVICE="all"
@@ -51,6 +51,7 @@ Services:
   redis       Redis cache logs
   n8n         n8n main application logs
   worker      n8n worker logs (all replicas)
+  ngrok       ngrok tunnel container logs
   all         All services (default)
 
 Exit Codes:
@@ -93,8 +94,11 @@ get_container_names() {
 	worker)
 		echo "n8n-worker"
 		;;
+	ngrok)
+		echo "ngrok"
+		;;
 	all)
-		echo "postgres redis n8n n8n-worker"
+		echo "postgres redis n8n n8n-worker ngrok"
 		;;
 	esac
 }

@@ -1,11 +1,32 @@
 ---
 # =============================================================================
-# ngrok.yml - ngrok Agent Configuration for n8n (v3 format)
+# ngrok.yml - ngrok Agent Multi-Service Configuration (v3 format)
 # =============================================================================
-# Description: Configures ngrok endpoint to forward external HTTPS traffic
-#              to the n8n container with OAuth protection and webhook passthrough
+# Description: Configures ngrok endpoints for multiple services with individual
+#              traffic policies. Each endpoint can have its own OAuth/auth rules.
 # Documentation: docs/TUNNELS.md
-# Version: 3 (migrated from v2 tunnels format 2025-12-27)
+# Version: 3 (multi-service architecture, 2025-12-27)
+# =============================================================================
+#
+# ARCHITECTURE:
+# -------------
+# This configuration supports multiple service endpoints through ngrok.
+# Each endpoint is defined separately with its own:
+#   - Custom domain URL
+#   - Upstream backend address
+#   - Traffic policy (OAuth, rate limiting, etc.)
+#
+# ADDING NEW SERVICES:
+# --------------------
+# 1. Copy the Ollama template section below
+# 2. Uncomment and update the following:
+#    - name: unique identifier for the endpoint
+#    - url: your ngrok custom domain for this service
+#    - upstream.url: Docker internal address (http://service:port)
+#    - traffic_policy: customize authentication rules as needed
+# 3. Restart ngrok: ./scripts/tunnel-manage.sh restart
+#
+# NOTE: Additional endpoints may require ngrok paid plan
 # =============================================================================
 
 version: 3
@@ -13,7 +34,20 @@ version: 3
 # Note: authtoken is provided via NGROK_AUTHTOKEN environment variable
 # in docker-compose.yml, not in this config file
 
+# =============================================================================
+# ENDPOINTS
+# =============================================================================
+# Each endpoint creates a tunnel from an external URL to an internal service.
+# Endpoints are processed in order; first matching traffic policy rule applies.
+# =============================================================================
+
 endpoints:
+  # ---------------------------------------------------------------------------
+  # n8n Workflow Automation (ACTIVE)
+  # ---------------------------------------------------------------------------
+  # Primary endpoint for n8n web UI and webhook processing.
+  # OAuth required for UI access, webhooks bypass authentication.
+  # ---------------------------------------------------------------------------
   - name: n8n
     url: https://n8n.aiwithapex.ngrok.dev
     upstream:
@@ -31,8 +65,7 @@ endpoints:
 
         # Rule 2: Deny access if email domain is not allowed
         # Only applies to authenticated requests (non-webhook paths)
-        # Note: Multiple expressions are ANDed - user must fail BOTH domain checks
-        # Logic: !(A || B) = !A && !B (De Morgan's law) - deny if not either domain
+        # Logic: !(A || B) = !A && !B - deny if not either allowed domain
         - name: "Restrict to allowed email domains"
           expressions:
             - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
@@ -45,3 +78,67 @@ endpoints:
                 content: "Access denied. Only @aiwithapex.com and @apexwebservices.com email domains are allowed."
                 headers:
                   content-type: "text/plain"
+
+  # ---------------------------------------------------------------------------
+  # Ollama LLM Service (TEMPLATE - INACTIVE)
+  # ---------------------------------------------------------------------------
+  # Template for future Ollama/LLM integration.
+  # Uncomment and configure when deploying Ollama service.
+  #
+  # Prerequisites:
+  # - Ollama Docker service running (add to docker-compose.yml)
+  # - ngrok custom domain configured (e.g., ollama.aiwithapex.ngrok.dev)
+  # - ngrok plan supports multiple endpoints
+  #
+  # Memory Note: Ollama requires 4GB+ RAM for most LLM models.
+  # Ensure WSL2 has sufficient memory allocation before enabling.
+  # ---------------------------------------------------------------------------
+  # - name: ollama
+  #   url: https://ollama.aiwithapex.ngrok.dev
+  #   upstream:
+  #     url: http://ollama:11434
+  #   traffic_policy:
+  #     on_http_request:
+  #       # Rule: Require Google OAuth for all Ollama API requests
+  #       # Unlike n8n, Ollama has no webhook paths to bypass
+  #       - name: "Require Google OAuth for Ollama access"
+  #         expressions:
+  #           - "true"
+  #         actions:
+  #           - type: oauth
+  #             config:
+  #               provider: google
+  #
+  #       # Rule: Restrict to allowed email domains
+  #       - name: "Restrict to allowed email domains"
+  #         expressions:
+  #           - "!actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com')"
+  #           - "!actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com')"
+  #         actions:
+  #           - type: custom-response
+  #             config:
+  #               status_code: 403
+  #               content: "Access denied. Only @aiwithapex.com and @apexwebservices.com email domains are allowed."
+  #               headers:
+  #                 content-type: "text/plain"
+
+# =============================================================================
+# ADDITIONAL SERVICE TEMPLATES
+# =============================================================================
+# Copy and customize for additional services:
+#
+#   - name: service-name
+#     url: https://service.aiwithapex.ngrok.dev
+#     upstream:
+#       url: http://service:port
+#     traffic_policy:
+#       on_http_request:
+#         - name: "Require OAuth"
+#           expressions:
+#             - "true"
+#           actions:
+#             - type: oauth
+#               config:
+#                 provider: google
+#
+# =============================================================================

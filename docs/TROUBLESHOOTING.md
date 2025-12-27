@@ -331,6 +331,147 @@ docker stats --no-stream
 - Check for inefficient workflow logic
 - Review external API timeouts
 
+## Tunnel Issues
+
+### 9. Tunnel Not Connecting
+
+**Symptom**: ngrok container running but tunnel not connected, or container restarting
+
+**Checks**:
+```bash
+# Check tunnel status
+./scripts/tunnel-manage.sh status
+
+# Check ngrok logs for errors
+./scripts/view-logs.sh -s ngrok -n 50
+
+# Verify authtoken is set
+grep NGROK_AUTHTOKEN .env
+```
+
+**Common Error Codes**:
+| Error | Meaning | Fix |
+|-------|---------|-----|
+| ERR_NGROK_105 | Invalid authtoken | Update NGROK_AUTHTOKEN in .env |
+| ERR_NGROK_108 | Tunnel session limit | Check ngrok dashboard for active sessions |
+| ERR_NGROK_120 | Domain not authorized | Verify domain in ngrok dashboard |
+
+**Fixes**:
+- Verify authtoken: Ensure NGROK_AUTHTOKEN is correct in .env
+- Check domain: Verify custom domain is configured in ngrok dashboard
+- Restart tunnel: `./scripts/tunnel-manage.sh restart`
+
+### 10. Webhooks Not Received
+
+**Symptom**: External services report webhook delivery failures
+
+**Checks**:
+```bash
+# Verify tunnel is connected
+./scripts/tunnel-manage.sh status
+
+# Check ngrok web inspector for incoming requests
+# Open http://localhost:4040 in browser
+
+# Check n8n is receiving requests
+./scripts/view-logs.sh -s n8n -n 100 | grep webhook
+```
+
+**Fixes**:
+- Tunnel down: `./scripts/tunnel-manage.sh start`
+- n8n not responding: `docker compose restart n8n`
+- Wrong webhook URL: Verify URL includes /webhook/ prefix
+
+### 11. OAuth Login Failing
+
+**Symptom**: Google OAuth loop or access denied at ngrok
+
+**Checks**:
+```bash
+# Check traffic policy in ngrok.yml
+cat config/ngrok.yml | grep -A 10 oauth
+
+# Verify allowed domains
+cat config/ngrok.yml | grep endsWith
+```
+
+**Fixes**:
+- Email domain not allowed: Add domain to traffic policy
+- OAuth provider issue: Check Google Cloud Console for OAuth app status
+- Cookie issue: Clear browser cookies and try again
+
+### 12. Tunnel API Unreachable
+
+**Symptom**: tunnel-manage.sh shows API unreachable
+
+**Checks**:
+```bash
+# Verify container is running
+docker ps | grep ngrok
+
+# Check port binding
+docker port n8n-ngrok 4040
+
+# Test API directly
+curl -s http://localhost:4040/api/tunnels
+```
+
+**Fixes**:
+- Port conflict: Check if port 4040 is in use by another process
+- Container issue: `./scripts/tunnel-manage.sh restart`
+- Firewall: Ensure localhost:4040 is not blocked
+
+### 13. Tunnel Disconnecting Frequently
+
+**Symptom**: Tunnel drops and reconnects repeatedly
+
+**Checks**:
+```bash
+# Check ngrok logs for patterns
+./scripts/view-logs.sh -s ngrok -n 200 | grep -i "reconnect\|disconnect\|error"
+
+# Check network stability
+ping -c 5 google.com
+```
+
+**Fixes**:
+- Network issues: Check internet connection stability
+- Auth issues: Verify authtoken is still valid
+- Rate limits: Check ngrok dashboard for rate limit warnings
+
+### Tunnel Decision Tree
+
+```
+Tunnel not working?
+|
++-> Is container running?
+|   $ docker ps | grep ngrok
+|   |
+|   +-> No: Start tunnel
+|   |   $ ./scripts/tunnel-manage.sh start
+|   |
+|   +-> Yes: Check API
+|       $ ./scripts/tunnel-manage.sh status
+|
++-> API reachable?
+|   |
+|   +-> No: Container issue
+|   |   $ ./scripts/tunnel-manage.sh restart
+|   |
+|   +-> Yes: Check tunnel connection
+|       $ curl http://localhost:4040/api/tunnels
+|
++-> Tunnel connected?
+|   |
+|   +-> No: Check ngrok logs for errors
+|   |   $ ./scripts/view-logs.sh -s ngrok -n 50
+|   |
+|   +-> Yes: Issue is elsewhere
+|       Check n8n, network, or external service
+```
+
+---
+
 ## Emergency Procedures
 
 ### Full Stack Restart
@@ -378,3 +519,4 @@ docker compose up -d
 - [MONITORING.md](MONITORING.md) - Monitoring runbook
 - [SCALING.md](SCALING.md) - Worker scaling configuration
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
+- [TUNNELS.md](TUNNELS.md) - Tunnel configuration and multi-service architecture

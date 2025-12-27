@@ -25,6 +25,7 @@ Day-to-day operations reference for the n8n stack.
 | Workers | `docker compose up -d n8n-worker` | `docker compose stop n8n-worker` | `docker compose restart n8n-worker` | `./scripts/view-logs.sh -s worker` |
 | PostgreSQL | `docker compose up -d postgres` | `docker compose stop postgres` | `docker compose restart postgres` | `./scripts/view-logs.sh -s postgres` |
 | Redis | `docker compose up -d redis` | `docker compose stop redis` | `docker compose restart redis` | `./scripts/view-logs.sh -s redis` |
+| ngrok | `./scripts/tunnel-manage.sh start` | `./scripts/tunnel-manage.sh stop` | `./scripts/tunnel-manage.sh restart` | `./scripts/view-logs.sh -s ngrok` |
 
 ### Backup Commands
 
@@ -275,6 +276,75 @@ docker compose down --remove-orphans
 
 ---
 
+## Tunnel Operations
+
+The ngrok tunnel provides external access for webhooks and authenticated UI access.
+
+### Quick Status Check
+
+```bash
+# Check tunnel is connected
+./scripts/tunnel-manage.sh status
+
+# Detailed status with metrics
+./scripts/tunnel-status.sh
+```
+
+### Starting/Stopping Tunnel
+
+```bash
+# Start tunnel
+./scripts/tunnel-manage.sh start
+
+# Stop tunnel (webhooks will fail while stopped)
+./scripts/tunnel-manage.sh stop
+
+# Restart tunnel (clears connections)
+./scripts/tunnel-manage.sh restart
+```
+
+### Viewing Tunnel Logs
+
+```bash
+# Recent logs
+./scripts/view-logs.sh -s ngrok -n 50
+
+# Follow logs in real-time
+./scripts/view-logs.sh -s ngrok -f
+```
+
+### Web Inspector
+
+Access the ngrok web inspector for request debugging:
+- URL: http://localhost:4040
+- Shows all requests through the tunnel
+- Useful for debugging webhook deliveries
+
+### Common Tunnel Tasks
+
+| Task | Command |
+|------|---------|
+| Check status | `./scripts/tunnel-manage.sh status` |
+| Restart tunnel | `./scripts/tunnel-manage.sh restart` |
+| View logs | `./scripts/view-logs.sh -s ngrok` |
+| Debug requests | Open http://localhost:4040 |
+
+### Tunnel Health in Morning Checklist
+
+Add to your morning checks:
+
+```bash
+# Include tunnel status
+./scripts/tunnel-manage.sh status
+```
+
+**What to look for**:
+- Tunnel connected and healthy
+- Active tunnels count = 1 (or more if multi-service)
+- No repeated reconnection in logs
+
+---
+
 ## Troubleshooting Quick Links
 
 | Issue | Solution |
@@ -284,6 +354,8 @@ docker compose down --remove-orphans
 | Workflows not running | Check queue: `./scripts/system-status.sh` |
 | Database issues | See [RECOVERY.md](RECOVERY.md#postgresql-recovery) |
 | Slow performance | Run: `./scripts/monitor-resources.sh` |
+| Tunnel not connecting | See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#tunnel-issues) |
+| Webhooks not working | Check: `./scripts/tunnel-manage.sh status` |
 
 ---
 
@@ -306,6 +378,7 @@ docker compose down --remove-orphans
 ## Related Documentation
 
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Problem diagnosis and fixes
+- [TUNNELS.md](TUNNELS.md) - Tunnel configuration and multi-service architecture
 - [RECOVERY.md](RECOVERY.md) - Disaster recovery procedures
 - [UPGRADE.md](UPGRADE.md) - Version upgrade procedures
 - [SECURITY.md](SECURITY.md) - Security configuration
