@@ -28,63 +28,63 @@ BACKUP_FILE="${BACKUP_DIR}/${BACKUP_FILENAME}"
 # Functions
 # -----------------------------------------------------------------------------
 log_info() {
-    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
+	echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
+	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 log_success() {
-    echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
+	echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [backup-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 check_volume() {
-    if ! docker volume inspect "$VOLUME_NAME" &>/dev/null; then
-        log_error "Docker volume ${VOLUME_NAME} does not exist"
-        return 1
-    fi
-    return 0
+	if ! docker volume inspect "$VOLUME_NAME" &>/dev/null; then
+		log_error "Docker volume ${VOLUME_NAME} does not exist"
+		return 1
+	fi
+	return 0
 }
 
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 main() {
-    log_info "Starting n8n data backup"
+	log_info "Starting n8n data backup"
 
-    # Check volume exists
-    if ! check_volume; then
-        exit 1
-    fi
+	# Check volume exists
+	if ! check_volume; then
+		exit 1
+	fi
 
-    # Ensure backup directory exists
-    mkdir -p "$BACKUP_DIR"
+	# Ensure backup directory exists
+	mkdir -p "$BACKUP_DIR"
 
-    # Create backup using alpine container with volume mount
-    log_info "Creating archive ${BACKUP_FILE}"
+	# Create backup using alpine container with volume mount
+	log_info "Creating archive ${BACKUP_FILE}"
 
-    if docker run --rm \
-        -v "${VOLUME_NAME}:/data:ro" \
-        -v "${BACKUP_DIR}:/backup" \
-        alpine:latest \
-        tar czf "/backup/${BACKUP_FILENAME}" -C /data .; then
+	if docker run --rm \
+		-v "${VOLUME_NAME}:/data:ro" \
+		-v "${BACKUP_DIR}:/backup" \
+		alpine:latest \
+		tar czf "/backup/${BACKUP_FILENAME}" -C /data .; then
 
-        # Verify backup file was created and has content
-        if [[ -s "$BACKUP_FILE" ]]; then
-            BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-            log_success "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
-            exit 0
-        else
-            log_error "Backup file is empty"
-            rm -f "$BACKUP_FILE"
-            exit 1
-        fi
-    else
-        log_error "tar backup failed"
-        rm -f "$BACKUP_FILE"
-        exit 1
-    fi
+		# Verify backup file was created and has content
+		if [[ -s "$BACKUP_FILE" ]]; then
+			BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+			log_success "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
+			exit 0
+		else
+			log_error "Backup file is empty"
+			rm -f "$BACKUP_FILE"
+			exit 1
+		fi
+	else
+		log_error "tar backup failed"
+		rm -f "$BACKUP_FILE"
+		exit 1
+	fi
 }
 
 main "$@"

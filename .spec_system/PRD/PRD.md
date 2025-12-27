@@ -127,6 +127,7 @@ This system delivers the product via phases. Each phase is implemented via multi
 |-------|------|----------|--------|
 | 00 | Foundation and Core Infrastructure | 4 | Complete |
 | 01 | Operations and Optimization | 5 | Complete |
+| 02 | External Access and Tunnel Infrastructure | 3 | Not Started |
 
 ## Phase 00: Foundation and Core Infrastructure
 
@@ -172,6 +173,26 @@ Session specifications located in `.spec_system/PRD/phase_00/`.
 
 Session specifications located in `.spec_system/PRD/phase_01/`.
 
+## Phase 02: External Access and Tunnel Infrastructure
+
+### Objectives
+
+1. Deploy ngrok as a Docker sidecar container integrated with the existing n8n stack
+2. Configure n8n webhooks to use the custom ngrok domain (n8n.aiwithapex.ngrok.dev)
+3. Implement OAuth authentication and IP restrictions via ngrok Traffic Policies
+4. Design extensible multi-service tunnel architecture for future integrations
+5. Document tunnel management, troubleshooting, and security procedures
+
+### Sessions
+
+| Session | Name | Est. Tasks |
+|---------|------|------------|
+| 01 | ngrok Container and n8n Webhook Integration | ~20-25 |
+| 02 | Traffic Policies and OAuth Security | ~15-20 |
+| 03 | Multi-Service Architecture and Management | ~15-20 |
+
+Session specifications located in `.spec_system/PRD/phase_02/`.
+
 ## Technical Stack
 
 - **Host OS**: WSL2 Ubuntu 22.04 or 24.04 LTS - native Linux environment with Windows integration
@@ -180,6 +201,7 @@ Session specifications located in `.spec_system/PRD/phase_01/`.
 - **Database**: PostgreSQL 16-alpine - production-grade persistence, 10x faster than SQLite
 - **Message Broker**: Redis 7-alpine - queue mode support for distributed execution
 - **Application**: n8n 2.0+ Community Edition - workflow automation with queue mode support
+- **Tunnel Gateway**: ngrok (Docker sidecar) - secure external access with custom domain and traffic policies
 - **Shell**: Bash - scripting for automation and maintenance
 
 ## Success Criteria
@@ -199,6 +221,14 @@ Session specifications located in `.spec_system/PRD/phase_01/`.
 - [ ] Backup script created and tested
 - [ ] Automated backup scheduled via cron
 - [ ] Worker scaling verified (scale up/down works)
+- [ ] ngrok container running and healthy in Docker Compose stack
+- [ ] n8n accessible via custom domain (https://n8n.aiwithapex.ngrok.dev)
+- [ ] ngrok web inspector accessible at http://localhost:4040
+- [ ] Webhooks functional through ngrok tunnel
+- [ ] Google OAuth protecting n8n UI access
+- [ ] Webhook paths (/webhook/*) passing through without authentication
+- [ ] Tunnel status integrated into health-check.sh output
+- [ ] Multi-service tunnel configuration documented and extensible
 
 ## Risks
 
@@ -208,6 +238,9 @@ Session specifications located in `.spec_system/PRD/phase_01/`.
 - **Worker queue disconnect**: Redis connectivity issues prevent job processing. Mitigation: Health checks with automatic container restart and Redis persistence.
 - **Encryption key loss**: Lost encryption key makes stored credentials unrecoverable. Mitigation: Store key in dedicated file with restricted permissions and include in backups.
 - **Port conflict**: Port 5678 already in use blocks n8n startup. Mitigation: Document port check command in troubleshooting.
+- **ngrok tunnel disconnection**: Network issues may disrupt external access. Mitigation: Health checks on ngrok container with automatic restart, monitoring via ngrok dashboard.
+- **ngrok authtoken exposure**: Leaked authtoken allows unauthorized tunnel creation. Mitigation: Store in .env (gitignored), use ngrok dashboard to revoke if compromised.
+- **OAuth misconfiguration**: Incorrect traffic policies may block legitimate webhook traffic. Mitigation: Test webhook passthrough rules before production use.
 
 ## Assumptions
 
@@ -218,11 +251,23 @@ Session specifications located in `.spec_system/PRD/phase_01/`.
 - Internet connection is available for pulling Docker images
 - User is familiar with basic Docker and command-line operations
 - No other services are using port 5678
+- ngrok paid plan with custom domain capability available
+- ngrok authtoken available from ngrok dashboard
+- Custom domain (n8n.aiwithapex.ngrok.dev) already configured in ngrok dashboard
 
 ## Open Questions
 
-1. Should Docker service auto-start be configured via systemd or bashrc approach?
-2. What is the preferred timezone for the installation (currently set to America/New_York)?
-3. Should worker concurrency be set to 5 or 10 per worker instance?
-4. What backup retention period is preferred (currently 7 days)?
-5. Should PostgreSQL performance tuning configuration be included in Phase 00 or Phase 01?
+### Resolved (Phase 00-01)
+
+1. ~~Should Docker service auto-start be configured via systemd or bashrc approach?~~ - **Resolved: systemd**
+2. ~~What is the preferred timezone for the installation?~~ - **Resolved: America/New_York**
+3. ~~Should worker concurrency be set to 5 or 10 per worker instance?~~ - **Resolved: 10 per worker (50 total)**
+4. ~~What backup retention period is preferred?~~ - **Resolved: 7 days**
+5. ~~Should PostgreSQL performance tuning be Phase 00 or 01?~~ - **Resolved: Phase 01**
+
+### Resolved (Phase 02)
+
+1. ~~Which OAuth provider for ngrok traffic policies?~~ - **Resolved: Google OAuth**
+2. ~~Should ngrok web inspector be exposed on a port for debugging?~~ - **Resolved: Yes, port 4040**
+3. ~~What IP addresses should be whitelisted for n8n UI access?~~ - **Resolved: None initially, rely on OAuth**
+4. ~~Should tunnel status be integrated into existing health-check.sh script?~~ - **Resolved: Yes**

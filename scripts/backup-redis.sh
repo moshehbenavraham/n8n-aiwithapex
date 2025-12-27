@@ -21,8 +21,8 @@ CONTAINER_NAME="n8n-redis"
 
 # Source environment variables for Redis port
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
-    # shellcheck source=/dev/null
-    source "${PROJECT_DIR}/.env"
+	# shellcheck source=/dev/null
+	source "${PROJECT_DIR}/.env"
 fi
 
 # Redis settings
@@ -38,89 +38,92 @@ MAX_WAIT_SECONDS=60
 # Functions
 # -----------------------------------------------------------------------------
 log_info() {
-    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
+	echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
+	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
 }
 
 log_success() {
-    echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
+	echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [backup-redis] $1" | tee -a "$LOG_FILE"
 }
 
 check_container() {
-    if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-        log_error "Container ${CONTAINER_NAME} is not running"
-        return 1
-    fi
-    return 0
+	if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+		log_error "Container ${CONTAINER_NAME} is not running"
+		return 1
+	fi
+	return 0
 }
 
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 main() {
-    log_info "Starting Redis backup"
+	log_info "Starting Redis backup"
 
-    # Check container is running
-    if ! check_container; then
-        exit 1
-    fi
+	# Check container is running
+	if ! check_container; then
+		exit 1
+	fi
 
-    # Ensure backup directory exists
-    mkdir -p "$BACKUP_DIR"
+	# Ensure backup directory exists
+	mkdir -p "$BACKUP_DIR"
 
-    # Get current LASTSAVE timestamp before BGSAVE
-    LAST_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
-    if [[ -z "$LAST_SAVE" ]]; then
-        log_error "Failed to get LASTSAVE from Redis (port ${REDIS_PORT})"
-        exit 1
-    fi
-    log_info "Current LASTSAVE: ${LAST_SAVE}"
+	# Get current LASTSAVE timestamp before BGSAVE
+	# shellcheck disable=SC2086
+	LAST_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
+	if [[ -z "$LAST_SAVE" ]]; then
+		log_error "Failed to get LASTSAVE from Redis (port ${REDIS_PORT})"
+		exit 1
+	fi
+	log_info "Current LASTSAVE: ${LAST_SAVE}"
 
-    # Trigger background save
-    log_info "Triggering BGSAVE"
-    BGSAVE_RESULT=$(docker exec "$CONTAINER_NAME" $REDIS_CLI BGSAVE 2>/dev/null)
-    if [[ "$BGSAVE_RESULT" != *"started"* && "$BGSAVE_RESULT" != *"scheduled"* ]]; then
-        log_error "BGSAVE failed: ${BGSAVE_RESULT}"
-        exit 1
-    fi
+	# Trigger background save
+	log_info "Triggering BGSAVE"
+	# shellcheck disable=SC2086
+	BGSAVE_RESULT=$(docker exec "$CONTAINER_NAME" $REDIS_CLI BGSAVE 2>/dev/null)
+	if [[ "$BGSAVE_RESULT" != *"started"* && "$BGSAVE_RESULT" != *"scheduled"* ]]; then
+		log_error "BGSAVE failed: ${BGSAVE_RESULT}"
+		exit 1
+	fi
 
-    # Wait for BGSAVE to complete
-    log_info "Waiting for BGSAVE to complete..."
-    WAIT_COUNT=0
-    while [[ $WAIT_COUNT -lt $MAX_WAIT_SECONDS ]]; do
-        CURRENT_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
-        if [[ "$CURRENT_SAVE" != "$LAST_SAVE" ]]; then
-            log_info "BGSAVE completed. New LASTSAVE: ${CURRENT_SAVE}"
-            break
-        fi
-        sleep 1
-        ((WAIT_COUNT++))
-    done
+	# Wait for BGSAVE to complete
+	log_info "Waiting for BGSAVE to complete..."
+	WAIT_COUNT=0
+	while [[ $WAIT_COUNT -lt $MAX_WAIT_SECONDS ]]; do
+		# shellcheck disable=SC2086
+		CURRENT_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
+		if [[ "$CURRENT_SAVE" != "$LAST_SAVE" ]]; then
+			log_info "BGSAVE completed. New LASTSAVE: ${CURRENT_SAVE}"
+			break
+		fi
+		sleep 1
+		((WAIT_COUNT++))
+	done
 
-    if [[ $WAIT_COUNT -ge $MAX_WAIT_SECONDS ]]; then
-        log_error "BGSAVE timeout after ${MAX_WAIT_SECONDS} seconds"
-        exit 1
-    fi
+	if [[ $WAIT_COUNT -ge $MAX_WAIT_SECONDS ]]; then
+		log_error "BGSAVE timeout after ${MAX_WAIT_SECONDS} seconds"
+		exit 1
+	fi
 
-    # Copy RDB file from container
-    log_info "Copying RDB file to ${BACKUP_FILE}"
-    if docker cp "${CONTAINER_NAME}:/data/dump.rdb" "$BACKUP_FILE" 2>/dev/null; then
-        if [[ -s "$BACKUP_FILE" ]]; then
-            BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-            log_success "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
-            exit 0
-        else
-            log_error "Backup file is empty"
-            rm -f "$BACKUP_FILE"
-            exit 1
-        fi
-    else
-        log_error "Failed to copy RDB file from container"
-        exit 1
-    fi
+	# Copy RDB file from container
+	log_info "Copying RDB file to ${BACKUP_FILE}"
+	if docker cp "${CONTAINER_NAME}:/data/dump.rdb" "$BACKUP_FILE" 2>/dev/null; then
+		if [[ -s "$BACKUP_FILE" ]]; then
+			BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+			log_success "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
+			exit 0
+		else
+			log_error "Backup file is empty"
+			rm -f "$BACKUP_FILE"
+			exit 1
+		fi
+	else
+		log_error "Failed to copy RDB file from container"
+		exit 1
+	fi
 }
 
 main "$@"

@@ -2,6 +2,7 @@
 # Covers: .env, .env.local, .env.production, .env.development, etc.
 .env
 .env.*
+!.env.example
 .env.*.local
 
 # Backup files (may contain secrets)

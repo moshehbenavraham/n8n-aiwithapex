@@ -1,7 +1,7 @@
 # Considerations
 
 > Institutional memory for AI assistants. Updated between phases via /carryforward.
-> **Line budget**: 600 max | **Last updated**: Phase 00 (2025-12-26)
+> **Line budget**: 600 max | **Last updated**: Phase 01 (2025-12-26)
 
 ---
 
@@ -12,30 +12,32 @@ Items requiring attention in upcoming phases. Review before each session.
 ### Technical Debt
 <!-- Max 5 items -->
 
-*None identified in Phase 00*
+- [P01] **Backup encryption at rest**: Backup files (*.sql.gz, *.rdb, *.tar.gz) contain sensitive data but are unencrypted. Consider GPG encryption for production deployments.
+
+- [P01] **Off-site backup destination**: All backups stored locally in project directory. Implement cloud storage (S3, B2) integration for true disaster recovery.
+
+- [P01] **Log rotation not applied**: Docker daemon.json log rotation documented but requires sudo to apply. Currently using unlimited log storage.
 
 ### External Dependencies
 <!-- Max 5 items -->
 
-- [P00] **n8n:latest image tag**: Using `n8nio/n8n:latest` pulls unpinned version. Consider pinning to specific version (currently 2.1.4) for production stability.
+- [P01] **Redis vm.overcommit_memory warning**: Requires host-level `sudo sysctl vm.overcommit_memory=1` and `/etc/sysctl.d/99-redis.conf` for persistence. Documented in TROUBLESHOOTING.md but not applied.
 
-- [P00] **Redis vm.overcommit_memory warning**: Redis logs warning about vm.overcommit_memory setting. Requires host-level sysctl change for optimal performance.
+- [P00] **WSL2 8GB RAM constraint**: System configured with 8GB RAM limit. Current usage ~1.6GB with 5 workers leaves ~6GB headroom. Monitor if adding services.
 
 ### Performance / Security
 <!-- Max 5 items -->
 
-- [P00] **WSL2 8GB RAM constraint**: System configured with 8GB RAM limit. Monitor memory usage under load - may need adjustment for heavy workflow execution.
+- [P01] **WSL2 I/O virtualization limits**: Synthetic benchmarks (pgbench) show <5% improvement from tuning due to virtualized disk. Real workloads may benefit more from work_mem/SSD settings.
 
-- [P00] **Secure cookie disabled**: `N8N_SECURE_COOKIE=false` for localhost development. Must enable when exposing to network.
-
-- [P00] **Single worker instance**: Running 1 worker with concurrency 10. Scale to 5+ workers for production throughput.
+- [P00] **Secure cookie disabled**: `N8N_SECURE_COOKIE=false` for localhost development. Must enable when exposing to network or adding reverse proxy.
 
 ### Architecture
 <!-- Max 5 items -->
 
-- [P00] **Manual execution offload**: `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS` not enabled. Consider enabling to reduce main instance load.
+- [P01] **No auto-scaling**: Worker count fixed at 5. Future phases may implement queue depth monitoring for dynamic scaling.
 
-- [P00] **No backup automation**: PostgreSQL and Redis data unprotected. Implement backup scripts in Phase 01.
+- [P01] **Worker health endpoints**: Queue mode workers don't expose HTTP endpoints. Health determined by container status only, not application health.
 
 ---
 
@@ -58,13 +60,23 @@ Proven patterns and anti-patterns. Reference during implementation.
 
 - [P00] **Environment variable externalization**: Store all secrets in `.env` with `${VAR}` references in docker-compose.yml. Never hardcode secrets.
 
-- [P00] **Sequential deployment by dependency**: Deploy services in dependency order (postgres -> redis -> n8n -> worker) to ensure reliable connectivity.
+- [P01] **Lock files for exclusive script execution**: Use lock files (e.g., `/tmp/backup-all.lock`) to prevent concurrent backup/restore operations that could cause corruption.
 
-- [P00] **Non-standard ports for conflicts**: Use port 6386 for Redis to avoid conflicts with host-installed instances. Document port assignments.
+- [P01] **Alpine temporary containers for volume backup**: Use `docker run --rm -v volume:/data alpine tar` instead of docker cp for cleaner volume access.
 
-- [P00] **YAML document start marker**: Always include `---` at start of YAML files. Required for proper yamllint validation.
+- [P01] **PostgreSQL DROP DATABASE WITH (FORCE)**: PostgreSQL 13+ supports FORCE option to terminate active connections during restore, eliminating need to stop services.
 
-- [P00] **Verification over reinstallation**: Check existing installations against spec requirements before reinstalling. Saves time and preserves working configurations.
+- [P01] **Remove container_name for replicas**: Docker Compose requires removing `container_name` to enable `deploy.replicas`. Auto-generates names like `n8n-n8n-worker-1`.
+
+- [P01] **Bull queue auto-distribution**: Redis Bull queue automatically distributes jobs across competing consumers without manual configuration or routing rules.
+
+- [P01] **Read-only config mounts**: Mount configuration files as `:ro` to prevent accidental modification and enable easy rollback to container defaults.
+
+- [P01] **Separate documentation files**: Create focused docs (SECURITY, RECOVERY, RUNBOOK, UPGRADE) rather than monolithic documents. Improves discoverability.
+
+- [P01] **sysctl.d for permanent kernel settings**: Use `/etc/sysctl.d/*.conf` files for persistent kernel parameters. Survives reboots unlike inline `sysctl` commands.
+
+- [P01] **Exact semantic version pinning**: Pin to `n8n:2.1.4` not `n8n:latest` or `n8n:2`. Prevents unexpected breaking changes in production.
 
 ### What to Avoid
 <!-- Max 10 items -->
@@ -73,9 +85,17 @@ Proven patterns and anti-patterns. Reference during implementation.
 
 - [P00] **docker-compose hyphen**: Use `docker compose` (space) not `docker-compose` (hyphen) with Docker Engine 20+. The hyphen version is deprecated.
 
-- [P00] **Standard Redis port in multi-project**: Avoid port 6379 when multiple Redis instances may exist. Use project-specific ports.
+- [P00] **Standard Redis port in multi-project**: Avoid port 6379 when multiple Redis instances may exist. Use project-specific ports (this project uses 6386).
 
 - [P00] **Assuming init script execution**: PostgreSQL init scripts only run on first container start with empty data directory. Plan accordingly for existing volumes.
+
+- [P01] **Assuming container names match service names**: Container names (n8n-postgres) differ from service names (postgres). Always verify with `docker ps`.
+
+- [P01] **Hardcoding default ports**: Source `.env` for project-specific configuration rather than assuming defaults (e.g., Redis 6379 vs project 6386).
+
+- [P01] **Expecting benchmark targets in WSL2**: WSL2 I/O virtualization limits synthetic benchmark gains. Don't chase 20%+ improvements in virtualized environments.
+
+- [P01] **World-writable config files**: PostgreSQL refuses to load config files with mode 666+. Use chmod 644 for config files mounted into containers.
 
 ### Tool/Library Notes
 <!-- Max 5 items -->
@@ -84,7 +104,11 @@ Proven patterns and anti-patterns. Reference during implementation.
 
 - [P00] **n8n queue mode Redis config**: Use `QUEUE_BULL_REDIS_*` variables, not standard `REDIS_*` variables. n8n has separate configuration namespaces.
 
-- [P00] **WSL requires restart for .wslconfig**: Changes to .wslconfig only apply after `wsl.exe --shutdown` and restart. Plan for session interruption.
+- [P01] **Docker stats --no-stream**: Use `--no-stream` flag for scripting to get single snapshot instead of continuous output.
+
+- [P01] **pgbench WSL2 limitations**: I/O bound in virtualized environment. Memory tuning shows <5% gains vs 20%+ on native hardware.
+
+- [P01] **listen_addresses for containers**: PostgreSQL requires `listen_addresses = '*'` in custom config for Docker container networking (default 'localhost' fails).
 
 ---
 
@@ -94,10 +118,14 @@ Recently closed items (buffer - rotates out after 2 phases).
 
 | Phase | Item | Resolution |
 |-------|------|------------|
+| P01 | Single worker instance | Scaled to 5 workers with 50 concurrent execution capacity |
+| P01 | No backup automation | Full backup system with 7-day retention, cron scheduling |
+| P01 | Manual execution offload disabled | Enabled OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true |
+| P01 | n8n:latest image tag | Pinned to n8n:2.1.4, postgres:16.11-alpine, redis:7.4.7-alpine |
 | P00 | WSL2 environment setup | Configured 8GB/4CPU/2GB swap, localhost forwarding enabled |
 | P00 | Docker installation | Verified Docker 29.1.3, Compose 5.0.0, NVIDIA runtime pre-configured |
 | P00 | Project structure | Created docker-compose.yml, .env, directory structure, init scripts |
-| P00 | Service deployment | All 4 containers healthy (postgres, redis, n8n, worker) |
+| P00 | Service deployment | All 8 containers healthy (postgres, redis, n8n-main, 5 workers) |
 
 ---
 
