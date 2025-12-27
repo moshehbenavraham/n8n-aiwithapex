@@ -52,9 +52,67 @@ ngrok provides a secure tunnel that forwards external HTTPS traffic to the n8n i
 
 | File | Purpose |
 |------|---------|
-| `config/ngrok.yml` | ngrok tunnel configuration |
+| `config/ngrok.yml` | ngrok endpoint configuration (v3 format) |
+| `config/ngrok.yml.v2.bak` | Backup of previous v2 configuration |
 | `docker-compose.yml` | ngrok service definition |
 | `.env` | Environment variables including ngrok settings |
+
+### ngrok.yml Configuration (v3 Format)
+
+The ngrok configuration uses v3 endpoints format (migrated from deprecated v2 tunnels format):
+
+```yaml
+version: 3
+
+# Note: authtoken provided via NGROK_AUTHTOKEN env var in docker-compose.yml
+
+endpoints:
+  - name: n8n
+    url: https://n8n.aiwithapex.ngrok.dev
+    upstream:
+      url: http://n8n:5678
+    traffic_policy:
+      on_http_request:
+        # Rule 1: Require OAuth for non-webhook paths
+        - name: "Require Google OAuth for UI access"
+          expressions:
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+          actions:
+            - type: oauth
+              config:
+                provider: google
+
+        # Rule 2: Restrict to allowed email domains
+        - name: "Restrict to allowed email domains"
+          expressions:
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!(actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com') || actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com'))"
+          actions:
+            - type: custom-response
+              config:
+                status_code: 403
+                content: "Access denied. Only allowed email domains permitted."
+```
+
+**Key Configuration Elements**:
+
+| Element | Description |
+|---------|-------------|
+| `version: 3` | Uses v3 agent config format (v2 tunnels deprecated) |
+| `agent.authtoken` | References `NGROK_AUTHTOKEN` environment variable |
+| `endpoints` | Array of endpoint definitions (replaces `tunnels`) |
+| `url` | Public HTTPS URL (combines v2 `proto` + `domain`) |
+| `upstream.url` | Internal Docker service URL (replaces v2 `addr`) |
+| `traffic_policy` | Defines request handling rules |
+
+### Traffic Policy
+
+The traffic policy implements OAuth-based access control:
+
+- **Webhook paths** (`/webhook/*`, `/webhook-test/*`): Pass through without authentication
+- **All other paths**: Require Google OAuth login
+
+This is achieved using a CEL (Common Expression Language) expression that excludes webhook paths from the OAuth requirement.
 
 ## Setup
 
@@ -178,3 +236,41 @@ curl -s http://localhost:4040/api/requests/http | jq '.requests[:5]'
 - The web inspector (port 4040) is only bound locally
 - SSL termination happens at the ngrok edge
 - Internal Docker traffic remains HTTP (n8n:5678)
+
+### OAuth Authentication
+
+The tunnel is protected by Google OAuth at the ngrok edge:
+
+- **Defense in depth**: OAuth at ngrok edge + n8n built-in authentication
+- **Webhook bypass**: `/webhook/*` and `/webhook-test/*` paths pass through without OAuth (required for external services to trigger workflows)
+- **Domain restriction**: Only `@aiwithapex.com` and `@apexwebservices.com` Google accounts can access
+
+Users with other Google accounts will be denied with HTTP 403 after OAuth login.
+
+### Security Flow
+
+```
+External Request --> ngrok Edge
+                         |
+                         v
+              +-------------------+
+              | Traffic Policy    |
+              | Evaluation        |
+              +-------------------+
+                    |         |
+           /webhook/*       Other paths
+                |                |
+                v                v
+          [PASSTHROUGH]    [OAuth Required]
+                |                |
+                v                v
+          n8n Webhook      Google OAuth
+          Handler          Login Flow
+                                |
+                                v
+                          [Authenticated]
+                                |
+                                v
+                           n8n UI Access
+                           (then n8n login)
+```

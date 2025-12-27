@@ -1,15 +1,47 @@
+---
 # =============================================================================
-# ngrok.yml - ngrok Tunnel Configuration for n8n
+# ngrok.yml - ngrok Agent Configuration for n8n (v3 format)
 # =============================================================================
-# Description: Configures ngrok tunnel to forward external HTTPS traffic
-#              to the n8n container on the internal Docker network
+# Description: Configures ngrok endpoint to forward external HTTPS traffic
+#              to the n8n container with OAuth protection and webhook passthrough
 # Documentation: docs/TUNNELS.md
+# Version: 3 (migrated from v2 tunnels format 2025-12-27)
 # =============================================================================
 
-version: 2
+version: 3
 
-tunnels:
-  n8n:
-    proto: http
-    addr: n8n:5678
-    domain: n8n.aiwithapex.ngrok.dev
+# Note: authtoken is provided via NGROK_AUTHTOKEN environment variable
+# in docker-compose.yml, not in this config file
+
+endpoints:
+  - name: n8n
+    url: https://n8n.aiwithapex.ngrok.dev
+    upstream:
+      url: http://n8n:5678
+    traffic_policy:
+      on_http_request:
+        # Rule 1: Require Google OAuth for all non-webhook paths
+        - name: "Require Google OAuth for UI access"
+          expressions:
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+          actions:
+            - type: oauth
+              config:
+                provider: google
+
+        # Rule 2: Deny access if email domain is not allowed
+        # Only applies to authenticated requests (non-webhook paths)
+        # Note: Multiple expressions are ANDed - user must fail BOTH domain checks
+        # Logic: !(A || B) = !A && !B (De Morgan's law) - deny if not either domain
+        - name: "Restrict to allowed email domains"
+          expressions:
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com')"
+            - "!actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com')"
+          actions:
+            - type: custom-response
+              config:
+                status_code: 403
+                content: "Access denied. Only @aiwithapex.com and @apexwebservices.com email domains are allowed."
+                headers:
+                  content-type: "text/plain"
