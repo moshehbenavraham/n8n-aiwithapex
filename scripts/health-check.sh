@@ -216,6 +216,72 @@ check_worker_replicas() {
 	return 0
 }
 
+# T017/S0302: Check auto-scaling status
+check_autoscale_status() {
+	log_info "Checking auto-scaling status..."
+
+	# Source environment for autoscale settings
+	if [[ -f "${PROJECT_DIR}/.env" ]]; then
+		# shellcheck disable=SC1091
+		source "${PROJECT_DIR}/.env"
+	fi
+
+	local autoscale_enabled="${AUTOSCALE_ENABLED:-false}"
+	local min_workers="${AUTOSCALE_MIN_WORKERS:-1}"
+	local max_workers="${AUTOSCALE_MAX_WORKERS:-10}"
+	local high_threshold="${AUTOSCALE_HIGH_THRESHOLD:-20}"
+	local low_threshold="${AUTOSCALE_LOW_THRESHOLD:-5}"
+
+	# Get current queue depth
+	local queue_depth=0
+	if [[ -x "${SCRIPT_DIR}/queue-depth.sh" ]]; then
+		queue_depth=$("${SCRIPT_DIR}/queue-depth.sh" 2>/dev/null || echo "0")
+	fi
+
+	# Get current worker count
+	local current_workers=0
+	current_workers=$(docker compose ps --format json 2>/dev/null | jq -r 'select(.Service == "n8n-worker" and .State == "running") | .Name' | wc -l)
+
+	# Check cooldown status
+	local cooldown_remaining=0
+	local cooldown_file="/tmp/worker-autoscale.last"
+	local cooldown_seconds="${AUTOSCALE_COOLDOWN_SECONDS:-120}"
+	if [[ -f "$cooldown_file" ]]; then
+		local last_scale
+		last_scale=$(cat "$cooldown_file" 2>/dev/null || echo 0)
+		local current_time
+		current_time=$(date +%s)
+		local elapsed=$((current_time - last_scale))
+		if [[ $elapsed -lt $cooldown_seconds ]]; then
+			cooldown_remaining=$((cooldown_seconds - elapsed))
+		fi
+	fi
+
+	# Display status
+	log_info "Auto-scaling: ${autoscale_enabled} (workers: ${current_workers}, queue: ${queue_depth})"
+	log_info "Bounds: min=${min_workers}, max=${max_workers} | Thresholds: high=${high_threshold}, low=${low_threshold}"
+
+	if [[ $cooldown_remaining -gt 0 ]]; then
+		log_info "Cooldown: ${cooldown_remaining}s remaining"
+	fi
+
+	# Determine scaling action status
+	if [[ "$autoscale_enabled" != "true" ]]; then
+		log_warn "Auto-scaling is disabled"
+		return 0
+	fi
+
+	if [[ $queue_depth -ge $high_threshold ]] && [[ $current_workers -lt $max_workers ]]; then
+		log_warn "Queue depth high (${queue_depth}), scale-up may be triggered"
+	elif [[ $queue_depth -le $low_threshold ]] && [[ $current_workers -gt $min_workers ]]; then
+		log_info "Queue depth low (${queue_depth}), scale-down may be triggered"
+	else
+		log_success "Auto-scaling: stable (no action needed)"
+	fi
+
+	return 0
+}
+
 # T014/T015: Check ngrok tunnel connectivity
 check_ngrok_tunnel() {
 	log_info "Checking ngrok tunnel..."
@@ -300,6 +366,9 @@ main() {
 			OVERALL_STATUS=2
 		fi
 	fi
+
+	# Check auto-scaling status (informational, does not affect overall status)
+	check_autoscale_status
 
 	log_info "=========================================="
 	if [[ $OVERALL_STATUS -eq 0 ]]; then

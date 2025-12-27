@@ -165,3 +165,38 @@ teardown() {
 	run grep -q "State.Status\|State.Health" "$SCRIPTS_DIR/health-check.sh"
 	assert_success
 }
+
+# -----------------------------------------------------------------------------
+# Auto-Scaling Status Tests (T021/S0302)
+# -----------------------------------------------------------------------------
+
+@test "health-check: includes auto-scaling status function" {
+	run grep -q "check_autoscale_status" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: auto-scaling status reads AUTOSCALE_ENABLED" {
+	run grep -q "AUTOSCALE_ENABLED" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: auto-scaling status displays worker bounds" {
+	run grep -q "AUTOSCALE_MIN_WORKERS\|AUTOSCALE_MAX_WORKERS" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: auto-scaling status checks queue depth" {
+	run grep -q "queue-depth.sh\|queue_depth" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: auto-scaling status checks cooldown" {
+	run grep -q "cooldown" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: check_autoscale_status function exists" {
+	source_script_functions "health-check.sh"
+	run type check_autoscale_status
+	assert_success
+}

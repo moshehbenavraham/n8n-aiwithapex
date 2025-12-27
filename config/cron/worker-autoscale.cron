@@ -1,0 +1,27 @@
+# =============================================================================
+# Worker Auto-Scaling Cron Job
+# =============================================================================
+# Description: Runs worker-autoscale.sh every minute to adjust worker count
+#              based on Redis Bull queue depth.
+#
+# Installation:
+#   crontab -e
+#   # Add the line below (without the leading # comment)
+#
+# To enable:
+#   crontab /home/aiwithapex/n8n/config/cron/worker-autoscale.cron
+#
+# To verify:
+#   crontab -l
+#
+# To disable:
+#   crontab -r  (removes all cron jobs for user)
+#   # Or edit with: crontab -e and remove the line
+#
+# Log output:
+#   Scaling events are logged to: logs/autoscale.log
+#   Cron execution errors: /tmp/worker-autoscale-cron.log
+# =============================================================================
+
+# Run worker auto-scaling every minute
+* * * * * /home/aiwithapex/n8n/scripts/worker-autoscale.sh >> /tmp/worker-autoscale-cron.log 2>&1
