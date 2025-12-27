@@ -1,9 +1,9 @@
 #!/bin/bash
 # =============================================================================
-# restore-postgres.sh - PostgreSQL Database Restore
+# restore-n8n.sh - n8n Data Volume Restore
 # =============================================================================
-# Description: Restores the n8n PostgreSQL database from a backup file
-# Usage: ./restore-postgres.sh <backup_file.sql.gz>
+# Description: Restores n8n data volume from a tar.gz backup
+# Usage: ./restore-n8n.sh <backup_file.tar.gz|backup_file.tar.gz.gpg>
 # Exit Codes: 0=success, 1=error
 # =============================================================================
 
@@ -15,37 +15,35 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LOG_FILE="${PROJECT_DIR}/logs/backup.log"
-CONTAINER_NAME="n8n-postgres"
+VOLUME_NAME="n8n_n8n_data"
+N8N_CONTAINER="n8n-main"
 
 # Source environment variables
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
 	# shellcheck source=/dev/null
 	source "${PROJECT_DIR}/.env"
 else
-	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [restore-postgres] .env file not found" | tee -a "$LOG_FILE"
+	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [restore-n8n] .env file not found" | tee -a "$LOG_FILE"
 	exit 1
 fi
-
-DB_USER="${POSTGRES_USER:-n8n}"
-DB_NAME="${POSTGRES_DB:-n8n}"
 
 # -----------------------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------------------
 log_info() {
-	echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [restore-postgres] $1" | tee -a "$LOG_FILE"
+	echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') [restore-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [restore-postgres] $1" | tee -a "$LOG_FILE"
+	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [restore-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 log_success() {
-	echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [restore-postgres] $1" | tee -a "$LOG_FILE"
+	echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [restore-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 log_warn() {
-	echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') [restore-postgres] $1" | tee -a "$LOG_FILE"
+	echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') [restore-n8n] $1" | tee -a "$LOG_FILE"
 }
 
 # Decrypt a GPG-encrypted backup file
@@ -78,26 +76,27 @@ decrypt_backup_file() {
 	fi
 }
 
-check_container() {
-	if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-		log_error "Container ${CONTAINER_NAME} is not running"
+check_volume() {
+	if ! docker volume inspect "$VOLUME_NAME" &>/dev/null; then
+		log_error "Docker volume ${VOLUME_NAME} does not exist"
 		return 1
 	fi
 	return 0
 }
 
 usage() {
-	echo "Usage: $0 <backup_file.sql.gz|backup_file.sql.gz.gpg>"
+	echo "Usage: $0 <backup_file.tar.gz|backup_file.tar.gz.gpg>"
 	echo ""
 	echo "Arguments:"
-	echo "  backup_file.sql.gz      Path to gzip-compressed SQL backup file"
-	echo "  backup_file.sql.gz.gpg  Path to GPG-encrypted SQL backup file"
+	echo "  backup_file.tar.gz      Path to n8n data backup archive"
+	echo "  backup_file.tar.gz.gpg  Path to GPG-encrypted backup archive"
 	echo ""
 	echo "Examples:"
-	echo "  $0 backups/postgres/n8n_20250101_020000.sql.gz"
-	echo "  $0 backups/postgres/n8n_20250101_020000.sql.gz.gpg"
+	echo "  $0 backups/n8n/n8n_data_20250101_020000.tar.gz"
+	echo "  $0 backups/n8n/n8n_data_20250101_020000.tar.gz.gpg"
 	echo ""
 	echo "Note: For encrypted files, set BACKUP_GPG_PASSPHRASE in .env"
+	echo "Warning: n8n services should be stopped before restore."
 	exit 1
 }
 
@@ -121,19 +120,19 @@ main() {
 	fi
 
 	# Check file extension
-	if [[ "$BACKUP_FILE" == *.sql.gz.gpg ]]; then
+	if [[ "$BACKUP_FILE" == *.tar.gz.gpg ]]; then
 		IS_ENCRYPTED=true
-	elif [[ "$BACKUP_FILE" != *.sql.gz ]]; then
-		log_error "Backup file must be .sql.gz or .sql.gz.gpg"
+	elif [[ "$BACKUP_FILE" != *.tar.gz ]]; then
+		log_error "Backup file must be .tar.gz or .tar.gz.gpg"
 		exit 1
 	fi
 
-	log_info "Starting PostgreSQL restore from: ${BACKUP_FILE}"
+	log_info "Starting n8n data restore from: ${BACKUP_FILE}"
 
 	# Handle encrypted files
 	if [[ "$IS_ENCRYPTED" == true ]]; then
 		log_info "Encrypted backup detected - decrypting..."
-		TEMP_DECRYPTED=$(mktemp /tmp/n8n-restore-XXXXXX.sql.gz)
+		TEMP_DECRYPTED=$(mktemp /tmp/n8n-data-restore-XXXXXX.tar.gz)
 		if ! decrypt_backup_file "$BACKUP_FILE" "$TEMP_DECRYPTED"; then
 			rm -f "$TEMP_DECRYPTED"
 			exit 1
@@ -150,8 +149,8 @@ main() {
 	}
 	trap cleanup_temp EXIT
 
-	# Check container is running
-	if ! check_container; then
+	# Check volume exists
+	if ! check_volume; then
 		exit 1
 	fi
 
@@ -163,9 +162,19 @@ main() {
 	fi
 	log_info "Backup file integrity verified"
 
+	# Get backup file size
+	BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+	log_info "Backup file size: ${BACKUP_SIZE}"
+
 	# Show warning
-	log_warn "This will drop and recreate the database ${DB_NAME}"
-	log_warn "All existing data will be replaced with backup data"
+	log_warn "This will replace n8n data volume with backup data"
+	log_warn "All existing n8n files (credentials, workflows, etc.) will be replaced"
+
+	# Check if n8n container is running
+	if docker ps --format '{{.Names}}' | grep -q "^${N8N_CONTAINER}$"; then
+		log_warn "n8n container is running - recommend stopping first"
+		log_warn "Run: docker compose stop n8n n8n-worker"
+	fi
 
 	# Check if running interactively
 	if [[ -t 0 ]]; then
@@ -179,54 +188,62 @@ main() {
 		log_info "Running non-interactively, proceeding with restore"
 	fi
 
-	# Terminate existing connections to the database
-	log_info "Terminating existing database connections..."
-	docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c \
-		"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${DB_NAME}' AND pid <> pg_backend_pid();" \
-		>/dev/null 2>&1
-
-	# Brief pause to allow connections to fully terminate
-	sleep 2
-
-	# Drop and recreate database (using WITH FORCE for PostgreSQL 13+)
-	log_info "Dropping existing database..."
-	if ! docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE);" 2>/dev/null; then
-		# Fallback for older PostgreSQL versions
-		log_warn "FORCE drop failed, trying standard drop..."
-		if ! docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null; then
-			log_error "Failed to drop database - active connections may be preventing drop"
-			log_error "Consider stopping n8n services before restore: docker compose stop n8n n8n-worker"
-			exit 1
-		fi
+	# Create backup of current data before overwriting
+	log_info "Creating safety backup of current data..."
+	SAFETY_BACKUP="/tmp/n8n_data_prerestore_$(date '+%Y%m%d_%H%M%S').tar.gz"
+	if docker run --rm \
+		-v "${VOLUME_NAME}:/data:ro" \
+		-v "/tmp:/backup" \
+		alpine:latest \
+		tar czf "/backup/$(basename "$SAFETY_BACKUP")" -C /data . 2>/dev/null; then
+		log_info "Safety backup created: ${SAFETY_BACKUP}"
+	else
+		log_warn "Could not create safety backup - continuing anyway"
 	fi
 
-	log_info "Creating fresh database..."
-	if ! docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" 2>/dev/null; then
-		log_error "Failed to create database"
+	# Clear existing volume data
+	log_info "Clearing existing volume data..."
+	if ! docker run --rm \
+		-v "${VOLUME_NAME}:/data" \
+		alpine:latest \
+		sh -c "rm -rf /data/* /data/.[!.]* 2>/dev/null || true"; then
+		log_error "Failed to clear volume data"
 		exit 1
 	fi
 
 	# Restore from backup
-	log_info "Restoring database from backup..."
-	if gunzip -c "$BACKUP_FILE" | docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" 2>/dev/null; then
-		log_success "Database restored successfully"
+	log_info "Restoring data from backup..."
+	BACKUP_DIR=$(dirname "$BACKUP_FILE")
+	BACKUP_FILENAME=$(basename "$BACKUP_FILE")
+
+	if docker run --rm \
+		-v "${VOLUME_NAME}:/data" \
+		-v "${BACKUP_DIR}:/backup:ro" \
+		alpine:latest \
+		tar xzf "/backup/${BACKUP_FILENAME}" -C /data; then
+		log_info "Data extraction completed"
 	else
-		log_error "Database restore failed"
+		log_error "Failed to extract backup"
+		log_error "Safety backup available at: ${SAFETY_BACKUP}"
 		exit 1
 	fi
 
-	# Verify restore by counting tables
+	# Verify restore by listing contents
 	log_info "Verifying restore..."
-	TABLE_COUNT=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c \
-		"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
+	FILE_COUNT=$(docker run --rm \
+		-v "${VOLUME_NAME}:/data:ro" \
+		alpine:latest \
+		find /data -type f 2>/dev/null | wc -l)
+	log_info "Restored ${FILE_COUNT} files to volume"
 
-	if [[ -z "$TABLE_COUNT" || "$TABLE_COUNT" -eq 0 ]]; then
-		log_warn "No tables found after restore - backup may have been empty"
-	else
-		log_info "Found ${TABLE_COUNT} tables in restored database"
+	# Clean up safety backup on success
+	if [[ -f "$SAFETY_BACKUP" ]]; then
+		rm -f "$SAFETY_BACKUP"
+		log_info "Removed safety backup"
 	fi
 
-	log_success "PostgreSQL restore completed from: ${BACKUP_FILE}"
+	log_success "n8n data restore completed from: ${BACKUP_FILE}"
+	log_info "Restart n8n services: docker compose up -d n8n n8n-worker"
 	exit 0
 }
 

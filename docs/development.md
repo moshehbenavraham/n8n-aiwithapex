@@ -29,6 +29,31 @@ docker exec n8n-postgres pg_isready -U n8n
 
 # Redis
 docker exec n8n-redis redis-cli -p 6386 ping
+
+# Tunnel status
+./scripts/tunnel-manage.sh status
+```
+
+## Tunnel Management
+
+```bash
+# Check tunnel status
+./scripts/tunnel-manage.sh status
+
+# Restart tunnel
+./scripts/tunnel-manage.sh restart
+
+# Stop tunnel (ngrok only)
+./scripts/tunnel-manage.sh stop
+
+# Start tunnel
+./scripts/tunnel-manage.sh start
+
+# View ngrok logs
+./scripts/view-logs.sh -s ngrok
+
+# Open ngrok inspector
+open http://localhost:4040
 ```
 
 ## Scaling Workers

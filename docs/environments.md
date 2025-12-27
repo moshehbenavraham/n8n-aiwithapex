@@ -1,12 +1,14 @@
 # Environments
 
-This n8n installation runs as a single local development/automation environment.
+This n8n installation runs as a single local development/automation environment with external access via ngrok tunnel.
 
 ## Environment Overview
 
 | Environment | URL | Purpose |
 |-------------|-----|---------|
 | Local (WSL2) | http://localhost:5678 | Development and automation |
+| External (ngrok) | https://n8n.aiwithapex.ngrok.dev | Webhooks and remote access |
+| ngrok Inspector | http://localhost:4040 | Tunnel debugging |
 
 ## Configuration
 
@@ -43,7 +45,18 @@ All configuration is managed through the `.env` file in the project root.
 | Variable | Description |
 |----------|-------------|
 | `N8N_ENCRYPTION_KEY` | Credential encryption key (never change) |
-| `N8N_SECURE_COOKIE` | false (localhost only) |
+| `N8N_SECURE_COOKIE` | true (required for HTTPS via ngrok) |
+
+### Tunnel Settings
+
+| Variable | Description |
+|----------|-------------|
+| `NGROK_AUTHTOKEN` | ngrok authentication token |
+| `NGROK_DOMAIN` | Custom domain (n8n.aiwithapex.ngrok.dev) |
+| `NGROK_INSPECTOR_PORT` | Web inspector port (4040) |
+| `WEBHOOK_URL` | External webhook base URL |
+| `N8N_HOST` | Hostname for URLs (n8n.aiwithapex.ngrok.dev) |
+| `N8N_PROTOCOL` | Protocol (https for ngrok) |
 
 ## Resource Allocation
 
@@ -61,16 +74,19 @@ Configured in Windows `.wslconfig`:
 |-----------|-----------|--------------|
 | n8n-main | No limit | No limit |
 | n8n-worker (x5) | No limit | No limit |
+| n8n-ngrok | No limit | No limit |
 | PostgreSQL | No limit | No limit |
 | Redis | No limit | 256 MB |
 
 ## Ports
 
-| Service | Internal Port | External Port |
-|---------|---------------|---------------|
-| n8n | 5678 | 5678 |
-| PostgreSQL | 5432 | Not exposed |
-| Redis | 6386 | Not exposed |
+| Service | Internal Port | External Port | Notes |
+|---------|---------------|---------------|-------|
+| n8n | 5678 | 5678 | Local access |
+| ngrok Inspector | 4040 | 4040 | Debug UI |
+| ngrok Tunnel | - | 443 | Via n8n.aiwithapex.ngrok.dev |
+| PostgreSQL | 5432 | Not exposed | Internal only |
+| Redis | 6386 | Not exposed | Internal only |
 
 ## Data Persistence
 

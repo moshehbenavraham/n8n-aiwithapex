@@ -173,3 +173,47 @@ teardown() {
 	run grep -q "Fallback\|fallback\|standard drop" "$SCRIPTS_DIR/restore-postgres.sh"
 	assert_success
 }
+
+# -----------------------------------------------------------------------------
+# Encrypted Backup Tests
+# -----------------------------------------------------------------------------
+
+@test "restore-postgres: decrypt_backup_file function exists" {
+	run grep -q "decrypt_backup_file()" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: accepts .sql.gz.gpg files" {
+	run grep -q "\.sql\.gz\.gpg" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: detects encrypted backup files" {
+	run grep -q "IS_ENCRYPTED" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: uses GPG for decryption" {
+	run grep -q "\-\-decrypt" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: reads passphrase from BACKUP_GPG_PASSPHRASE" {
+	run grep -q "BACKUP_GPG_PASSPHRASE" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: creates temp file for decryption" {
+	run grep -q "mktemp" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: cleans up temp decrypted file" {
+	run grep -q "cleanup_temp\|TEMP_DECRYPTED" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}
+
+@test "restore-postgres: shows usage for encrypted files" {
+	run grep -q "backup_file.sql.gz.gpg" "$SCRIPTS_DIR/restore-postgres.sh"
+	assert_success
+}

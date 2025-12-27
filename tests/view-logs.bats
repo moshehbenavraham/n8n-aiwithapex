@@ -88,7 +88,7 @@ teardown() {
 	assert_output "n8n-worker"
 
 	run get_container_names "all"
-	assert_output "postgres redis n8n n8n-worker"
+	assert_output "postgres redis n8n n8n-worker ngrok"
 }
 
 # -----------------------------------------------------------------------------

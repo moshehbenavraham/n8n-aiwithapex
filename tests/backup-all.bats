@@ -176,3 +176,63 @@ teardown() {
 	"
 	assert_success
 }
+
+# -----------------------------------------------------------------------------
+# Encryption Function Tests
+# -----------------------------------------------------------------------------
+
+@test "backup-all: encrypt_backup_file function exists" {
+	run grep -q "encrypt_backup_file()" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: encrypt_backups function exists" {
+	run grep -q "encrypt_backups()" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: uses GPG symmetric encryption with AES256" {
+	run grep -q "cipher-algo AES256" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: reads passphrase from BACKUP_GPG_PASSPHRASE" {
+	run grep -q "BACKUP_GPG_PASSPHRASE" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: skips encryption when passphrase not set" {
+	run grep -q 'BACKUP_GPG_PASSPHRASE not set.*skipping encryption' "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: warns about short passphrase" {
+	run grep -q 'short.*16 chars' "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: checks for GPG availability" {
+	run grep -q "command -v gpg" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: creates .gpg files" {
+	run grep -q '\.gpg' "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: finds backup files for encryption" {
+	# Should look for .sql.gz, .rdb, .tar.gz, .backup, .yml files
+	run grep -q '\.sql\.gz.*\.rdb.*\.tar\.gz' "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: calls encrypt_backups in main" {
+	run grep -q "encrypt_backups" "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}
+
+@test "backup-all: sources .env file" {
+	run grep -q 'source.*\.env' "$SCRIPTS_DIR/backup-all.sh"
+	assert_success
+}

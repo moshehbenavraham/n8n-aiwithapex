@@ -1,0 +1,74 @@
+# =============================================================================
+# rclone Configuration Template for n8n Backup Off-site Storage
+# =============================================================================
+# Copy this file to ~/.config/rclone/rclone.conf and fill in your values
+# Or run 'rclone config' for interactive setup
+#
+# Documentation: https://rclone.org/docs/
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Example: Amazon S3 (or S3-compatible storage)
+# -----------------------------------------------------------------------------
+# Providers: AWS S3, Wasabi, DigitalOcean Spaces, MinIO, etc.
+#
+# [n8n-backup]
+# type = s3
+# provider = AWS
+# env_auth = false
+# access_key_id = YOUR_ACCESS_KEY_ID
+# secret_access_key = YOUR_SECRET_ACCESS_KEY
+# region = us-east-1
+# acl = private
+# storage_class = STANDARD
+
+# -----------------------------------------------------------------------------
+# Example: Backblaze B2
+# -----------------------------------------------------------------------------
+# Cost-effective cloud storage with S3-compatible API
+#
+# [n8n-backup]
+# type = b2
+# account = YOUR_ACCOUNT_ID
+# key = YOUR_APPLICATION_KEY
+# hard_delete = true
+
+# -----------------------------------------------------------------------------
+# Example: DigitalOcean Spaces (S3-compatible)
+# -----------------------------------------------------------------------------
+#
+# [n8n-backup]
+# type = s3
+# provider = DigitalOcean
+# env_auth = false
+# access_key_id = YOUR_SPACES_ACCESS_KEY
+# secret_access_key = YOUR_SPACES_SECRET_KEY
+# region = nyc3
+# endpoint = nyc3.digitaloceanspaces.com
+# acl = private
+
+# -----------------------------------------------------------------------------
+# Example: Wasabi (S3-compatible, no egress fees)
+# -----------------------------------------------------------------------------
+#
+# [n8n-backup]
+# type = s3
+# provider = Wasabi
+# env_auth = false
+# access_key_id = YOUR_ACCESS_KEY
+# secret_access_key = YOUR_SECRET_KEY
+# region = us-east-1
+# endpoint = s3.wasabisys.com
+
+# -----------------------------------------------------------------------------
+# Testing Your Configuration
+# -----------------------------------------------------------------------------
+# After configuring, test with:
+#   rclone lsd n8n-backup:                    # List buckets
+#   rclone ls n8n-backup:your-bucket/         # List bucket contents
+#   rclone sync ./test n8n-backup:bucket/test # Test sync
+#
+# For backup-offsite.sh, set in .env:
+#   RCLONE_REMOTE=n8n-backup
+#   RCLONE_BUCKET=your-bucket-name
+# =============================================================================

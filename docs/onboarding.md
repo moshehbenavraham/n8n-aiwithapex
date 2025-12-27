@@ -39,20 +39,29 @@ NAME           STATUS
 n8n-postgres   Up (healthy)
 n8n-redis      Up (healthy)
 n8n-main       Up (healthy)
+n8n-ngrok      Up (healthy)
 n8n-worker     Up (healthy)
 ```
 
 ## Access n8n
 
+### Local Access
 1. Open http://localhost:5678
 2. Create owner account on first visit
 3. Save credentials securely
 
+### External Access (via ngrok)
+1. Open https://n8n.aiwithapex.ngrok.dev
+2. Authenticate with Google (allowed domains only)
+3. Log in with n8n credentials
+
 ## Verify Setup
 
-- [x] All 4 containers running: `docker compose ps`
+- [x] All 5 containers running: `docker compose ps`
 - [x] Health check passes: `curl localhost:5678/healthz`
 - [x] UI accessible: http://localhost:5678
+- [x] Tunnel active: `./scripts/tunnel-manage.sh status`
+- [x] External access: https://n8n.aiwithapex.ngrok.dev
 - [x] Can create test workflow
 
 ## Environment Variables
@@ -65,6 +74,9 @@ Key variables in `.env`:
 | `POSTGRES_PASSWORD` | Database password |
 | `EXECUTIONS_MODE` | Must be `queue` for workers |
 | `GENERIC_TIMEZONE` | Workflow timezone |
+| `NGROK_AUTHTOKEN` | ngrok authentication token |
+| `NGROK_DOMAIN` | Custom ngrok domain |
+| `WEBHOOK_URL` | External webhook base URL |
 
 ## Common Issues
 
@@ -84,4 +96,13 @@ docker compose logs <service-name>
 ```bash
 # Verify Redis connectivity
 docker exec n8n-worker redis-cli -h redis -p 6386 ping
+```
+
+### Tunnel not connecting
+```bash
+# Check ngrok container logs
+docker logs n8n-ngrok
+
+# Verify authtoken is set
+grep NGROK_AUTHTOKEN .env
 ```
