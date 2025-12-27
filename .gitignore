@@ -61,3 +61,5 @@ Thumbs.db
 *.pid
 *.seed
 *.pid.lock
+# Spec System (AI development workflow)
+.spec_system/
