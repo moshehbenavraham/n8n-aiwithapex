@@ -10,6 +10,11 @@
 *.backup
 *.orig
 
+# AI Agent Instructions
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
 # Data directories (persistent container data, keep directory structure)
 # Ignore all files but preserve directories and .gitkeep
 data/**
