@@ -472,6 +472,100 @@ Tunnel not working?
 
 ---
 
+## Log Management Issues
+
+### 14. Disk Space Exhausted by Logs
+
+**Symptom**: Disk full errors, containers failing to start, log writes failing
+
+**Checks**:
+```bash
+# Check disk space
+df -h
+
+# Check container log sizes
+./scripts/cleanup-logs.sh
+
+# Find large log files
+sudo find /var/lib/docker/containers -name "*-json.log" -size +100M
+```
+
+**Fixes**:
+```bash
+# Truncate container logs (requires sudo)
+sudo ./scripts/cleanup-logs.sh --force
+
+# Verify daemon.json is deployed
+cat /etc/docker/daemon.json
+
+# If not deployed, copy and restart Docker
+sudo cp config/daemon.json /etc/docker/daemon.json
+sudo systemctl restart docker
+```
+
+### 15. Logs Not Rotating
+
+**Symptom**: Container log files growing beyond 100MB
+
+**Checks**:
+```bash
+# Verify daemon.json exists
+ls -la /etc/docker/daemon.json
+
+# Check Docker logging driver config
+docker info | grep -A 5 "Logging Driver"
+
+# Verify compose logging config
+docker compose config | grep -A 3 "logging:"
+```
+
+**Fixes**:
+- Deploy daemon.json if missing
+- Restart Docker after deploying daemon.json
+- Note: Existing logs only rotate when they exceed max-size after restart
+
+### 16. Cannot View Specific Service Logs
+
+**Symptom**: view-logs.sh returns empty or shows wrong service
+
+**Checks**:
+```bash
+# Verify container name
+docker compose ps --format "{{.Names}}"
+
+# Check view-logs.sh service mapping
+./scripts/view-logs.sh --help
+```
+
+**Fixes**:
+- Use correct service name: postgres, redis, n8n, worker, ngrok, all
+- For worker logs specifically: `./scripts/view-logs.sh -s worker`
+
+### Log Management Decision Tree
+
+```
+Disk filling up with logs?
+|
++-> Check container log sizes
+|   $ ./scripts/cleanup-logs.sh
+|
++-> Is daemon.json deployed?
+|   $ cat /etc/docker/daemon.json
+|   |
+|   +-> No: Deploy it
+|   |   $ sudo cp config/daemon.json /etc/docker/daemon.json
+|   |   $ sudo systemctl restart docker
+|   |
+|   +-> Yes: Check if rotation is working
+|       $ sudo ls -la /var/lib/docker/containers/*/
+|       Look for rotated files: *-json.log.1, *-json.log.2, etc.
+|
++-> Need immediate space?
+    $ sudo ./scripts/cleanup-logs.sh --force
+```
+
+---
+
 ## Emergency Procedures
 
 ### Full Stack Restart
@@ -520,3 +614,4 @@ docker compose up -d
 - [SCALING.md](SCALING.md) - Worker scaling configuration
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
 - [TUNNELS.md](TUNNELS.md) - Tunnel configuration and multi-service architecture
+- [log-management.md](log-management.md) - Log rotation and cleanup guide

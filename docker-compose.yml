@@ -5,6 +5,11 @@ services:
     container_name: n8n-postgres
     restart: unless-stopped
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -27,6 +32,11 @@ services:
     container_name: n8n-redis
     restart: unless-stopped
     command: redis-server --port ${REDIS_PORT}
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -44,6 +54,11 @@ services:
     restart: unless-stopped
     ports:
       - "${N8N_PORT}:5678"
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       # Database
       DB_TYPE: ${DB_TYPE}
@@ -74,6 +89,9 @@ services:
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
       # Worker offloading
       OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
+      # Logging
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data/n8n/files:/home/node/.n8n/files
@@ -96,6 +114,11 @@ services:
     container_name: n8n-ngrok
     restart: unless-stopped
     command: start --all --config /etc/ngrok.yml
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
       NGROK_DOMAIN: ${NGROK_DOMAIN}
@@ -119,6 +142,11 @@ services:
     image: n8nio/n8n:2.1.4
     restart: unless-stopped
     command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     deploy:
       replicas: 5
       resources:
@@ -144,6 +172,9 @@ services:
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
       # Worker scaling
       EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
+      # Logging
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data/n8n/files:/home/node/.n8n/files
