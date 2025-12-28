@@ -200,3 +200,39 @@ teardown() {
 	run type check_autoscale_status
 	assert_success
 }
+
+# -----------------------------------------------------------------------------
+# Sysctl Optimization Tests (T018/S0304)
+# -----------------------------------------------------------------------------
+
+@test "health-check: includes sysctl optimization function" {
+	run grep -q "check_sysctl_optimization" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: sysctl check reads vm.overcommit_memory" {
+	run grep -q "vm.overcommit_memory" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: sysctl check references system config path" {
+	run grep -q "/etc/sysctl.d/99-n8n-optimizations.conf" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: sysctl check provides remediation advice" {
+	run grep -q "apply-sysctl.sh" "$SCRIPTS_DIR/health-check.sh"
+	assert_success
+}
+
+@test "health-check: check_sysctl_optimization function exists" {
+	source_script_functions "health-check.sh"
+	run type check_sysctl_optimization
+	assert_success
+}
+
+@test "health-check: help mentions sysctl optimization" {
+	run "$SCRIPTS_DIR/health-check.sh" --help
+	assert_success
+	assert_output --partial "vm.overcommit_memory"
+}

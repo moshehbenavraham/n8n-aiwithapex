@@ -601,6 +601,79 @@ docker compose down
 docker compose up -d
 ```
 
+## Disaster Recovery Procedures
+
+For comprehensive disaster recovery, see [disaster-recovery.md](disaster-recovery.md).
+
+### Quick Recovery Commands
+
+#### PostgreSQL Database Recovery
+
+```bash
+# List available backups
+ls -la backups/postgres/
+
+# Restore from backup (unencrypted)
+./scripts/restore-postgres.sh backups/postgres/n8n_YYYYMMDD_HHMMSS.sql.gz
+
+# Restore from backup (encrypted - requires BACKUP_GPG_PASSPHRASE in .env)
+./scripts/restore-postgres.sh backups/postgres/n8n_YYYYMMDD_HHMMSS.sql.gz.gpg
+```
+
+#### Redis Data Recovery
+
+```bash
+# List available backups
+ls -la backups/redis/
+
+# Restore from backup (requires Redis restart)
+./scripts/restore-redis.sh backups/redis/dump_YYYYMMDD_HHMMSS.rdb
+```
+
+#### n8n Data Volume Recovery
+
+```bash
+# Stop n8n services first
+docker compose stop n8n n8n-worker
+
+# Restore from backup
+./scripts/restore-n8n.sh backups/n8n/n8n_data_YYYYMMDD_HHMMSS.tar.gz
+
+# Restart services
+docker compose up -d n8n n8n-worker
+```
+
+### Recovery Testing
+
+Run recovery tests without affecting production data:
+
+```bash
+# Test all recovery procedures
+./scripts/test-recovery.sh --full
+
+# Test specific service
+./scripts/test-recovery.sh --postgres
+./scripts/test-recovery.sh --redis
+./scripts/test-recovery.sh --n8n
+```
+
+### Sysctl Optimization
+
+Apply kernel parameter optimizations for Redis:
+
+```bash
+# Check current settings
+./scripts/apply-sysctl.sh --check
+
+# Verify persistence
+./scripts/apply-sysctl.sh --verify
+
+# Get sudo commands to apply settings
+./scripts/apply-sysctl.sh --apply
+```
+
+---
+
 ## Getting Help
 
 1. Check logs first: `./scripts/view-logs.sh -s <service> -n 200`
@@ -615,3 +688,4 @@ docker compose up -d
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
 - [TUNNELS.md](TUNNELS.md) - Tunnel configuration and multi-service architecture
 - [log-management.md](log-management.md) - Log rotation and cleanup guide
+- [disaster-recovery.md](disaster-recovery.md) - Disaster recovery runbook

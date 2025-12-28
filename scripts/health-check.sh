@@ -57,6 +57,7 @@ Validates n8n stack health by checking:
   - Container health states (Docker HEALTHCHECK)
   - /healthz endpoint response
   - Worker replica count
+  - Sysctl optimization settings (vm.overcommit_memory)
 
 Options:
   --help, -h     Show this help message
@@ -282,6 +283,44 @@ check_autoscale_status() {
 	return 0
 }
 
+# T018/S0304: Check sysctl optimization settings
+check_sysctl_optimization() {
+	log_info "Checking sysctl optimization..."
+
+	local issues=0
+
+	# Check vm.overcommit_memory setting (required for Redis)
+	local overcommit
+	overcommit=$(sysctl -n vm.overcommit_memory 2>/dev/null)
+
+	if [[ -z "$overcommit" ]]; then
+		log_error "Cannot read vm.overcommit_memory"
+		issues=1
+	elif [[ "$overcommit" == "1" ]]; then
+		log_success "vm.overcommit_memory = 1 (optimized for Redis)"
+	else
+		log_warn "vm.overcommit_memory = $overcommit (should be 1 for Redis)"
+		log_info "Run: ./scripts/apply-sysctl.sh --apply"
+		issues=1
+	fi
+
+	# Check if persistent configuration exists
+	local system_config="/etc/sysctl.d/99-n8n-optimizations.conf"
+	if [[ -f "$system_config" ]]; then
+		log_success "Sysctl config persistent: $system_config"
+	else
+		log_warn "Sysctl config not persistent (settings will be lost on reboot)"
+		log_info "Run: ./scripts/apply-sysctl.sh --apply"
+		issues=1
+	fi
+
+	if [[ $issues -eq 0 ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # T014/T015: Check ngrok tunnel connectivity
 check_ngrok_tunnel() {
 	log_info "Checking ngrok tunnel..."
@@ -369,6 +408,9 @@ main() {
 
 	# Check auto-scaling status (informational, does not affect overall status)
 	check_autoscale_status
+
+	# Check sysctl optimization (informational, does not affect overall status)
+	check_sysctl_optimization
 
 	log_info "=========================================="
 	if [[ $OVERALL_STATUS -eq 0 ]]; then
