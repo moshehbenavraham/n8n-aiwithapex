@@ -1,0 +1,310 @@
+# n8n Production Stack for Coolify Deployment
+# Domain: n8n-apex.aiwithapex.com
+#
+# Features:
+# - Queue mode with Redis
+# - 3 workers (30 parallel executions)
+# - PostgreSQL 16.11 with tuned settings
+# - n8n 2.1.4 (pinned)
+# - Prometheus metrics
+# - Health checks on all services
+# - Privacy-respecting configuration
+#
+# Coolify auto-injects:
+# - SERVICE_FQDN_N8N_5678 (domain routing)
+# - SERVICE_USER_POSTGRES / SERVICE_PASSWORD_POSTGRES
+# - Traefik labels
+# - Network configuration
+#
+# Required Environment Variables (set in Coolify UI):
+# - N8N_ENCRYPTION_KEY: Must match existing instance to decrypt credentials
+# - POSTGRES_DB: Database name (default: n8n)
+# - N8N_LOG_LEVEL: Logging verbosity (default: info)
+
+services:
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  postgres:
+    image: postgres:16.11-alpine
+    restart: unless-stopped
+    # PostgreSQL tuning for n8n workloads
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+    environment:
+      POSTGRES_USER: ${SERVICE_USER_POSTGRES}
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_DB: ${POSTGRES_DB:-n8n}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ===========================================
+  # Redis Queue Broker
+  # ===========================================
+  redis:
+    image: redis:7.4.7-alpine
+    restart: unless-stopped
+    # Production-ready Redis configuration
+    command: >
+      redis-server
+      --port 6379
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      --tcp-keepalive 300
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ===========================================
+  # n8n Main Instance (UI + Webhooks + API)
+  # ===========================================
+  n8n:
+    image: n8nio/n8n:2.1.4
+    restart: unless-stopped
+    environment:
+      # Database
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
+      - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+
+      # Core Configuration (Coolify auto-injects SERVICE_FQDN_N8N)
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_HOST=${SERVICE_URL_N8N}
+      - N8N_PROTOCOL=https
+      - N8N_EDITOR_BASE_URL=${SERVICE_FQDN_N8N}
+      - WEBHOOK_URL=${SERVICE_FQDN_N8N}
+      - GENERIC_TIMEZONE=America/New_York
+      - N8N_USER_FOLDER=/home/node/.n8n
+
+      # Queue Mode
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
+      - QUEUE_WORKER_LOCK_DURATION=60000
+
+      # Data Management
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=50000
+      - N8N_METRICS=true
+
+      # Security
+      - N8N_SECURE_COOKIE=true
+
+      # Privacy (disable telemetry to Anthropic/n8n)
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+
+      # Worker Offloading
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+
+      # Logging
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=console
+    volumes:
+      - n8n-data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ===========================================
+  # n8n Worker 1
+  # ===========================================
+  n8n-worker-1:
+    image: n8nio/n8n:2.1.4
+    restart: unless-stopped
+    command: worker
+    environment:
+      # Database
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
+      - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      # Core
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=America/New_York
+      - N8N_USER_FOLDER=/home/node/.n8n
+      # Queue Mode
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
+      - QUEUE_WORKER_LOCK_DURATION=60000
+      # Worker Config
+      - EXECUTIONS_CONCURRENCY=10
+      # Privacy
+      - N8N_DIAGNOSTICS_ENABLED=false
+      # Logging
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=console
+    volumes:
+      - n8n-data:/home/node/.n8n:ro
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===========================================
+  # n8n Worker 2
+  # ===========================================
+  n8n-worker-2:
+    image: n8nio/n8n:2.1.4
+    restart: unless-stopped
+    command: worker
+    environment:
+      # Database
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
+      - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      # Core
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=America/New_York
+      - N8N_USER_FOLDER=/home/node/.n8n
+      # Queue Mode
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
+      - QUEUE_WORKER_LOCK_DURATION=60000
+      # Worker Config
+      - EXECUTIONS_CONCURRENCY=10
+      # Privacy
+      - N8N_DIAGNOSTICS_ENABLED=false
+      # Logging
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=console
+    volumes:
+      - n8n-data:/home/node/.n8n:ro
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===========================================
+  # n8n Worker 3
+  # ===========================================
+  n8n-worker-3:
+    image: n8nio/n8n:2.1.4
+    restart: unless-stopped
+    command: worker
+    environment:
+      # Database
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
+      - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      # Core
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=America/New_York
+      - N8N_USER_FOLDER=/home/node/.n8n
+      # Queue Mode
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
+      - QUEUE_WORKER_LOCK_DURATION=60000
+      # Worker Config
+      - EXECUTIONS_CONCURRENCY=10
+      # Privacy
+      - N8N_DIAGNOSTICS_ENABLED=false
+      # Logging
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=console
+    volumes:
+      - n8n-data:/home/node/.n8n:ro
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  postgres-data:
+  redis-data:
+  n8n-data:
