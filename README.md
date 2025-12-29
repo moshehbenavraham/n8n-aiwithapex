@@ -1,8 +1,21 @@
 # n8n
 
-Production-grade n8n workflow automation platform on WSL2 Ubuntu with Docker Compose, ngrok tunnels, and OAuth security.
+Production-grade n8n workflow automation platform with Docker Compose, queue mode, and distributed workers.
 
-## Quick Start
+## Deployment Options
+
+This project supports **two deployment forms**:
+
+| Deployment | Environment | URL | Status |
+|------------|-------------|-----|--------|
+| **WSL2 (Local)** | Ubuntu on Windows | https://n8n.aiwithapex.ngrok.dev | Operational |
+| **Coolify (Cloud)** | Coolify-managed server | https://n8n-apex.aiwithapex.com | Planning |
+
+See [Deployment Comparison](docs/deployment-comparison.md) for detailed differences.
+
+---
+
+## Quick Start (WSL2 Local)
 
 ```bash
 # Start all services
@@ -14,6 +27,10 @@ open http://localhost:5678
 # Access n8n (external via ngrok)
 open https://n8n.aiwithapex.ngrok.dev
 ```
+
+## Quick Start (Coolify)
+
+See [Deploy to Coolify](docs/ongoing-roadmap/deploy-to-coolify.md) for cloud deployment.
 
 ## Repository Structure
 
@@ -42,9 +59,15 @@ open https://n8n.aiwithapex.ngrok.dev
 
 ## Documentation
 
+### Deployment Guides
+- [Deployment Comparison](docs/deployment-comparison.md) - WSL2 vs Coolify side-by-side
+- [Installation Plan (WSL2)](docs/n8n-installation-plan.md) - Complete local setup guide
+- [Deploy to Coolify](docs/ongoing-roadmap/deploy-to-coolify.md) - Cloud deployment guide
+- [Migration Guide](docs/migration-wsl2-to-coolify.md) - Moving from WSL2 to Coolify
+
 ### Getting Started
-- [Onboarding](docs/onboarding.md) - Zero-to-running checklist
-- [Architecture](docs/ARCHITECTURE.md) - System design
+- [Onboarding](docs/onboarding.md) - Zero-to-running checklist (WSL2)
+- [Architecture](docs/ARCHITECTURE.md) - System design (both deployments)
 - [Deployment Status](docs/DEPLOYMENT_STATUS.md) - Current system state
 
 ### Operations

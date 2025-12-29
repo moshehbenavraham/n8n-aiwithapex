@@ -1,14 +1,29 @@
 # n8n Deployment Status
 
+**Last Updated**: 2025-12-28
+
+---
+
+## Deployment Forms
+
+This project supports two deployment forms. See [Deployment Comparison](deployment-comparison.md) for details.
+
+| Deployment | Status | URL | Documentation |
+|------------|--------|-----|---------------|
+| **WSL2 (Local)** | OPERATIONAL | https://n8n.aiwithapex.ngrok.dev | [Installation Plan](n8n-installation-plan.md) |
+| **Coolify (Cloud)** | PLANNING | https://n8n-apex.aiwithapex.com | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) |
+
+---
+
+## WSL2 Local Deployment
+
 **Deployment Date**: 2025-12-25
 **Status**: OPERATIONAL
 **Session**: phase00-session04-service-deployment-and-verification
 
----
+### System Overview
 
-## System Overview
-
-This document records the final state of the n8n deployment completed in Phase 00, Session 04.
+This section documents the state of the WSL2 local deployment completed in Phase 00, Session 04.
 
 ### Architecture
 
@@ -170,3 +185,49 @@ docker compose up -d --scale n8n-worker=5
 
 **Generated**: 2025-12-25 23:38 UTC
 **Phase 00 Status**: COMPLETE
+
+---
+
+## Coolify Cloud Deployment
+
+**Status**: PLANNING
+**Target URL**: https://n8n-apex.aiwithapex.com
+**Documentation**: [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md)
+
+### Current State
+
+The Coolify deployment is currently in planning phase. A one-click n8n service exists in Coolify but will be replaced with the full production stack.
+
+| Aspect | Current | Target |
+|--------|---------|--------|
+| Service Type | One-click n8n | Docker Compose stack |
+| Execution Mode | Single instance | Queue mode + workers |
+| Database | PostgreSQL (basic) | PostgreSQL (tuned) |
+| Redis | None | Redis 7.4.7 |
+| Workers | None | 3 workers |
+| Domain | n8n.aiwithapex.com | n8n-apex.aiwithapex.com |
+
+### Pre-Deployment Checklist
+
+- [ ] Backup existing Coolify n8n data
+- [ ] Extract encryption key from current service
+- [ ] Push `docker-compose.coolify.yml` to GitHub
+- [ ] Create new application in Coolify
+- [ ] Configure environment variables
+- [ ] Deploy and validate
+- [ ] Migrate data (if applicable)
+- [ ] Update webhook URLs
+- [ ] Decommission old service
+
+### Infrastructure UUIDs
+
+| Resource | UUID |
+|----------|------|
+| Server | `rcgk0og40w0kwogock4k44s0` |
+| Project | `m4cck40w0go4k88gwcg4k400` |
+| Environment | `sko8scc0c0ok8gcwo0gscw8o` |
+| Current n8n | `g8wow80sgg8oo0csg4sgkws0` |
+
+---
+
+**Last Updated**: 2025-12-28

@@ -1,8 +1,23 @@
 # Environments
 
-This n8n installation runs as a single local development/automation environment with external access via ngrok tunnel.
+This n8n installation supports two deployment forms, each with its own environment configuration.
 
-## Environment Overview
+---
+
+## Deployment Forms
+
+| Deployment | Status | Primary Use |
+|------------|--------|-------------|
+| **WSL2 (Local)** | Operational | Development, local automation |
+| **Coolify (Cloud)** | Planning | Production, cloud-hosted |
+
+See [Deployment Comparison](deployment-comparison.md) for detailed differences.
+
+---
+
+## WSL2 Local Environment
+
+### Environment Overview
 
 | Environment | URL | Purpose |
 |-------------|-----|---------|
@@ -106,8 +121,68 @@ If deploying to production, consider:
 4. **Monitoring**: Prometheus/Grafana integration
 5. **Backup offsite**: Cloud storage for backup copies
 
+---
+
+## Coolify Cloud Environment
+
+### Environment Overview
+
+| Environment | URL | Purpose |
+|-------------|-----|---------|
+| Production | https://n8n-apex.aiwithapex.com | Cloud-hosted workflows |
+| Coolify Dashboard | https://coolify.aiwithapex.com | Infrastructure management |
+
+### Configuration
+
+Configuration is managed through the Coolify UI:
+
+1. Navigate to the n8n application in Coolify
+2. Go to **Environment Variables** tab
+3. Set required variables
+
+### Core Settings (Coolify)
+
+| Variable | Source | Notes |
+|----------|--------|-------|
+| `SERVICE_FQDN_N8N` | Auto-generated | Coolify sets this automatically |
+| `SERVICE_URL_N8N` | Auto-generated | Domain without protocol |
+| `N8N_ENCRYPTION_KEY` | Manual | Must match existing if migrating |
+| `POSTGRES_DB` | Manual | Database name (default: n8n) |
+
+### Database Settings (Coolify)
+
+| Variable | Source | Notes |
+|----------|--------|-------|
+| `SERVICE_USER_POSTGRES` | Auto-generated | Coolify generates unique user |
+| `SERVICE_PASSWORD_POSTGRES` | Auto-generated | Coolify generates secure password |
+| `DB_POSTGRESDB_HOST` | Compose file | Set to `postgres` |
+
+### Coolify Docker Compose
+
+Uses `docker-compose.coolify.yml` with these differences from WSL2:
+
+| Aspect | WSL2 | Coolify |
+|--------|------|---------|
+| Compose file | `docker-compose.yml` | `docker-compose.coolify.yml` |
+| Reverse proxy | ngrok | Traefik (Coolify-managed) |
+| SSL | ngrok-managed | Let's Encrypt |
+| Environment | `.env` file | Coolify UI |
+| Network | Self-managed | Coolify-managed |
+
+### Coolify Infrastructure
+
+| Resource | UUID |
+|----------|------|
+| Server | `rcgk0og40w0kwogock4k44s0` |
+| Project | `m4cck40w0go4k88gwcg4k400` |
+| Environment | `sko8scc0c0ok8gcwo0gscw8o` |
+
+---
+
 ## Related Documentation
 
+- [Deployment Comparison](deployment-comparison.md) - WSL2 vs Coolify
+- [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) - Coolify deployment guide
 - [Security Guide](SECURITY.md) - Security hardening
 - [Scaling Guide](SCALING.md) - Worker scaling
 - [Port Assignments](PORTS-ASSIGNMENT.md) - Network details

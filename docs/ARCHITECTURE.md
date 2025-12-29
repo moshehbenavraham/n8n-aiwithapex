@@ -1,10 +1,25 @@
 # Architecture
 
+## Deployment Forms
+
+This project supports two deployment forms with identical core architecture:
+
+| Deployment | Status | External Access | Documentation |
+|------------|--------|-----------------|---------------|
+| **WSL2 (Local)** | Operational | ngrok tunnel + OAuth | [Installation Plan](n8n-installation-plan.md) |
+| **Coolify (Cloud)** | Planning | Traefik + Let's Encrypt | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) |
+
+See [Deployment Comparison](deployment-comparison.md) for detailed differences.
+
+---
+
 ## System Overview
 
-n8n workflow automation platform running in queue mode with distributed execution. External access via ngrok tunnel with OAuth protection.
+n8n workflow automation platform running in queue mode with distributed execution.
 
-## Dependency Graph
+## Architecture Diagrams
+
+### WSL2 Local Deployment
 
 ```
                    Internet (webhooks, external users)
@@ -30,6 +45,51 @@ n8n workflow automation platform running in queue mode with distributed executio
          +--------|  n8n-worker   |<-------------+
                   | (queue jobs)  |
                   +---------------+
+```
+
+### Coolify Cloud Deployment
+
+```
+                    Internet
+                        │
+                        ▼
+              ┌─────────────────┐
+              │   Traefik       │ (Coolify-managed)
+              │   (HTTPS/TLS)   │
+              └────────┬────────┘
+                       │
+         ┌─────────────┼─────────────┐
+         │             │             │
+         ▼             ▼             ▼
+    ┌─────────┐  ┌──────────┐  ┌──────────┐
+    │ n8n-ui  │  │ Webhooks │  │ Metrics  │
+    │ :5678   │  │ /webhook │  │ /metrics │
+    └────┬────┘  └────┬─────┘  └────┬─────┘
+         │            │             │
+         └────────────┼─────────────┘
+                      │
+              ┌───────┴───────┐
+              │   n8n-main    │
+              │   (Queue)     │
+              └───────┬───────┘
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+        ▼             ▼             ▼
+  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │ Worker 1 │  │ Worker 2 │  │ Worker N │
+  │          │  │          │  │  (1-10)  │
+  └────┬─────┘  └────┬─────┘  └────┬─────┘
+       │             │             │
+       └─────────────┼─────────────┘
+                     │
+         ┌───────────┴───────────┐
+         │                       │
+         ▼                       ▼
+   ┌──────────┐           ┌──────────┐
+   │ PostgreSQL│           │  Redis   │
+   │  (Data)  │           │ (Queue)  │
+   └──────────┘           └──────────┘
 ```
 
 ## Components
@@ -67,13 +127,27 @@ n8n workflow automation platform running in queue mode with distributed executio
 
 ## Tech Stack Rationale
 
+### Core Stack (Both Deployments)
+
 | Technology | Purpose | Why Chosen |
 |------------|---------|------------|
 | Docker Compose | Orchestration | Single-file stack definition, easy scaling |
 | PostgreSQL | Database | 10x faster than SQLite under load |
 | Redis | Queue broker | Required for queue mode with workers |
+
+### WSL2 Specific
+
+| Technology | Purpose | Why Chosen |
+|------------|---------|------------|
 | ngrok | Tunnel | Secure external access with custom domain and OAuth |
 | WSL2 | Runtime | Native Linux performance, Windows integration |
+
+### Coolify Specific
+
+| Technology | Purpose | Why Chosen |
+|------------|---------|------------|
+| Traefik | Reverse proxy | Coolify-managed, automatic SSL via Let's Encrypt |
+| Coolify | Orchestration | Simplified deployment, built-in CI/CD |
 
 ## Data Flow
 

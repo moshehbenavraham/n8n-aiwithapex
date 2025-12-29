@@ -2,7 +2,26 @@
 
 Zero-to-running checklist for this n8n installation.
 
-## Prerequisites
+---
+
+## Deployment Options
+
+This project supports two deployment forms:
+
+| Deployment | Guide | Best For |
+|------------|-------|----------|
+| **WSL2 (Local)** | This document | Development, local automation |
+| **Coolify (Cloud)** | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) | Production, cloud-hosted |
+
+See [Deployment Comparison](deployment-comparison.md) for detailed differences.
+
+---
+
+## WSL2 Local Onboarding
+
+This section covers setting up n8n on a Windows machine with WSL2 Ubuntu.
+
+### Prerequisites
 
 - [x] WSL2 Ubuntu 24.04 installed
 - [x] Docker Engine 29.1.3+ installed

@@ -2,6 +2,21 @@
 
 Day-to-day operations reference for the n8n stack.
 
+---
+
+## Deployment Context
+
+This runbook covers operations for **both deployment forms**:
+
+| Deployment | Status | Primary Operations |
+|------------|--------|-------------------|
+| **WSL2 (Local)** | Operational | This document |
+| **Coolify (Cloud)** | Planning | [Coolify Operations](#coolify-operations) |
+
+See [Deployment Comparison](deployment-comparison.md) for detailed differences.
+
+---
+
 ## Quick Reference
 
 ### Essential Commands
@@ -375,10 +390,121 @@ Add to your morning checks:
 
 ---
 
+---
+
+## Coolify Operations
+
+Operations for the Coolify cloud deployment differ from WSL2. This section covers Coolify-specific operations.
+
+> **Note**: The Coolify deployment is currently in PLANNING status. These operations will be applicable once deployed.
+
+### Dashboard Access
+
+- **Coolify Dashboard**: https://coolify.aiwithapex.com
+- **n8n Production**: https://n8n-apex.aiwithapex.com (planned)
+
+### Essential Operations (Coolify)
+
+| Task | Method |
+|------|--------|
+| Check status | Coolify Dashboard → Application → Status |
+| View logs | Coolify Dashboard → Application → Logs |
+| Deploy | Coolify Dashboard → Application → Deploy |
+| Restart | Coolify Dashboard → Application → Restart |
+| Stop | Coolify Dashboard → Application → Stop |
+
+### Coolify API Commands
+
+```bash
+# Set environment
+export COOLIFY_API_TOKEN="<your-token>"
+export COOLIFY_API_URL="https://coolify.aiwithapex.com/api/v1"
+
+# Check application status
+curl -s "${COOLIFY_API_URL}/applications/<uuid>" \
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" | jq '.status'
+
+# Deploy application
+curl -X POST "${COOLIFY_API_URL}/applications/<uuid>/deploy" \
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN}"
+
+# Stop application
+curl -X POST "${COOLIFY_API_URL}/applications/<uuid>/stop" \
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN}"
+
+# Start application
+curl -X POST "${COOLIFY_API_URL}/applications/<uuid>/start" \
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN}"
+```
+
+### Health Checks (Coolify)
+
+```bash
+# n8n health endpoint
+curl -s "https://n8n-apex.aiwithapex.com/healthz"
+
+# Prometheus metrics
+curl -s "https://n8n-apex.aiwithapex.com/metrics" | head -20
+```
+
+### Log Access (Coolify)
+
+Logs are accessed via the Coolify dashboard:
+
+1. Navigate to Coolify Dashboard
+2. Select the n8n application
+3. Click **Logs** tab
+4. Select specific service (n8n, worker, postgres, redis)
+
+Or via Docker on the Coolify server:
+
+```bash
+# SSH to Coolify server, then:
+docker logs n8n-<uuid> --tail 100
+docker logs n8n-worker-1-<uuid> --tail 100
+```
+
+### Scaling Workers (Coolify)
+
+To adjust worker count in Coolify:
+
+1. Edit `docker-compose.coolify.yml`
+2. Add/remove `n8n-worker-N` service definitions
+3. Commit and push to GitHub
+4. Redeploy via Coolify dashboard
+
+### Backup (Coolify)
+
+```bash
+# Export via n8n API
+curl -X GET "https://n8n-apex.aiwithapex.com/api/v1/workflows" \
+  -H "X-N8N-API-KEY: <api-key>" > workflows-backup.json
+
+# Database dump (via Coolify server SSH)
+docker exec postgres-<uuid> pg_dump -U n8n n8n > backup.sql
+```
+
+### Key UUIDs (Coolify)
+
+| Resource | UUID |
+|----------|------|
+| Server | `rcgk0og40w0kwogock4k44s0` |
+| Project | `m4cck40w0go4k88gwcg4k400` |
+| Environment | `sko8scc0c0ok8gcwo0gscw8o` |
+| Current n8n | `g8wow80sgg8oo0csg4sgkws0` |
+
+### Coolify-Specific Documentation
+
+- [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) - Full deployment guide
+- [Coolify API Reference](https://coolify.io/docs/api-reference) - Official API docs
+
+---
+
 ## Related Documentation
 
+- [Deployment Comparison](deployment-comparison.md) - WSL2 vs Coolify
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Problem diagnosis and fixes
-- [TUNNELS.md](TUNNELS.md) - Tunnel configuration and multi-service architecture
+- [TUNNELS.md](TUNNELS.md) - Tunnel configuration (WSL2)
 - [RECOVERY.md](RECOVERY.md) - Disaster recovery procedures
 - [UPGRADE.md](UPGRADE.md) - Version upgrade procedures
 - [SECURITY.md](SECURITY.md) - Security configuration
