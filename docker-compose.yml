@@ -108,6 +108,23 @@ services:
       start_period: 60s
     networks:
       - n8n-network
+      # =========================================================================
+      # LOCAL LLM INTEGRATION (Ollama)
+      # =========================================================================
+      # This connects n8n to the Ollama container running in the lore-sage project.
+      # The Ollama container (luminari-ollama) hosts local LLM models including:
+      #   - deepseek-r1:8b (reasoning/coding)
+      #   - qwen2.5:7b (general/coding)
+      #   - nomic-embed-text (embeddings for RAG)
+      #
+      # With this network connection, n8n can reach Ollama at:
+      #   Base URL: http://luminari-ollama:11434
+      #
+      # To use in n8n:
+      #   1. Create an "Ollama" credential with Base URL above
+      #   2. Use "Ollama Chat Model" node with model "deepseek-r1:8b"
+      # =========================================================================
+      - ollama-network
 
   ngrok:
     image: ngrok/ngrok:alpine
@@ -189,10 +206,36 @@ services:
       start_period: 30s
     networks:
       - n8n-network
+      # Workers also need Ollama access since they execute AI workflows
+      # (see comment on n8n service above for details)
+      - ollama-network
 
 networks:
+  # Internal network for n8n services (postgres, redis, n8n, workers)
   n8n-network:
     driver: bridge
+
+  # =============================================================================
+  # EXTERNAL NETWORK: Ollama (Local LLM)
+  # =============================================================================
+  # This references the existing network created by the lore-sage project
+  # (docker-compose project name: "lore").
+  #
+  # The network was created when lore-sage's docker-compose.yml was started.
+  # By marking it as "external: true", we tell Docker Compose:
+  #   "Don't create this network - it already exists, just connect to it"
+  #
+  # This allows n8n containers to communicate with luminari-ollama container
+  # using Docker's internal DNS (container names resolve automatically).
+  #
+  # If Ollama is not running, n8n will still start - it just won't be able
+  # to reach Ollama until that container is up.
+  #
+  # Network created by: /home/aiwithapex/projects/lore-sage/docker-compose.yml
+  # =============================================================================
+  ollama-network:
+    external: true
+    name: lore-sage_luminari-network
 
 volumes:
   postgres_data:
