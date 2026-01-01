@@ -25,7 +25,7 @@ n8n workflow automation platform running in queue mode with distributed executio
                    Internet (webhooks, external users)
                                 |
                                 v
-                 https://n8n.aiwithapex.ngrok.dev
+                 https://your.ngrok.domain
                         (ngrok Edge + OAuth)
                                 |
                                 v
@@ -123,7 +123,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 - **Tech**: ngrok Docker image (v3 config)
 - **Location**: Container `n8n-ngrok`
 - **Port**: 4040 (web inspector)
-- **External URL**: https://n8n.aiwithapex.ngrok.dev
+- **External URL**: https://your.ngrok.domain
 
 ## Tech Stack Rationale
 
@@ -152,7 +152,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 ## Data Flow
 
 ### External Webhooks (via ngrok)
-1. **External request** arrives at ngrok edge (https://n8n.aiwithapex.ngrok.dev)
+1. **External request** arrives at ngrok edge (https://your.ngrok.domain)
 2. **Traffic policy** evaluates: webhooks pass through, UI paths require OAuth
 3. **ngrok forwards** to n8n-main (http://n8n:5678)
 4. **Job created** and pushed to Redis queue
@@ -170,7 +170,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 - **Network**: `n8n-network` (bridge driver)
 - **Internal DNS**: Services communicate via container names
 - **External (local)**: n8n-main exposes port 5678 to host
-- **External (internet)**: ngrok exposes n8n via https://n8n.aiwithapex.ngrok.dev
+- **External (internet)**: ngrok exposes n8n via https://your.ngrok.domain
 - **ngrok inspector**: Port 4040 exposed to host for debugging
 
 ## Volumes

@@ -25,7 +25,7 @@ This document describes how to scale n8n workers in this deployment.
 |Worker 1| |Worker 2| |Worker 3| |Worker 4| |Worker 5|
 +--------+ +--------+ +--------+ +--------+ +--------+
 
-Total Capacity: 5 workers x 10 concurrency = 50 simultaneous executions
+Total Capacity: 3 workers x 10 concurrency = 30 simultaneous executions
 ```
 
 ---
@@ -34,7 +34,7 @@ Total Capacity: 5 workers x 10 concurrency = 50 simultaneous executions
 
 | Setting | Value | Location |
 |---------|-------|----------|
-| Default replicas | 5 | docker-compose.yml |
+| Default replicas | 3 | docker-compose.yml |
 | Concurrency per worker | 10 | .env (EXECUTIONS_CONCURRENCY) |
 | Memory limit per worker | 512 MB | docker-compose.yml |
 | Manual execution offload | true | .env (OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS) |

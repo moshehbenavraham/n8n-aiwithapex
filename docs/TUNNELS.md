@@ -14,7 +14,7 @@ The configuration uses a **multi-service architecture** that supports multiple e
                             Internet
                                 |
                                 v
-              n8n.aiwithapex.ngrok.dev:443
+              your.ngrok.domain:443
                      (ngrok Edge)
                                 |
                                 v
@@ -43,10 +43,10 @@ The configuration uses a **multi-service architecture** that supports multiple e
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `NGROK_AUTHTOKEN` | ngrok authentication token | `your-authtoken` |
-| `NGROK_DOMAIN` | Custom ngrok domain | `n8n.aiwithapex.ngrok.dev` |
+| `NGROK_DOMAIN` | Custom ngrok domain | `your.ngrok.domain` |
 | `NGROK_INSPECTOR_PORT` | Web inspector port | `4040` |
-| `WEBHOOK_URL` | n8n webhook base URL | `https://n8n.aiwithapex.ngrok.dev/` |
-| `N8N_HOST` | n8n host for URLs | `n8n.aiwithapex.ngrok.dev` |
+| `WEBHOOK_URL` | n8n webhook base URL | `https://your.ngrok.domain/` |
+| `N8N_HOST` | n8n host for URLs | `your.ngrok.domain` |
 | `N8N_PROTOCOL` | Protocol (http/https) | `https` |
 | `N8N_SECURE_COOKIE` | Enable secure cookies | `true` |
 
@@ -73,7 +73,7 @@ version: 3
 
 endpoints:
   - name: n8n
-    url: https://n8n.aiwithapex.ngrok.dev
+    url: https://your.ngrok.domain
     upstream:
       url: http://n8n:5678
     traffic_policy:
@@ -213,7 +213,7 @@ Access the ngrok web inspector for request debugging:
 
 **Checks**:
 1. Verify `N8N_SECURE_COOKIE=true` in `.env`
-2. Ensure accessing via HTTPS (https://n8n.aiwithapex.ngrok.dev)
+2. Ensure accessing via HTTPS (https://your.ngrok.domain)
 
 ### Container Health Check Failing
 
@@ -273,7 +273,7 @@ The ngrok configuration supports multiple service endpoints. Each endpoint is de
 
 | Endpoint | URL | Backend | Status |
 |----------|-----|---------|--------|
-| n8n | https://n8n.aiwithapex.ngrok.dev | http://n8n:5678 | Active |
+| n8n | https://your.ngrok.domain | http://n8n:5678 | Active |
 | ollama | https://ollama.aiwithapex.ngrok.dev | http://ollama:11434 | Template (inactive) |
 
 ### Adding New Services

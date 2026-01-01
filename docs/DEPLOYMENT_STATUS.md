@@ -10,7 +10,7 @@ This project supports two deployment forms. See [Deployment Comparison](deployme
 
 | Deployment | Status | URL | Documentation |
 |------------|--------|-----|---------------|
-| **WSL2 (Local)** | OPERATIONAL | https://n8n.aiwithapex.ngrok.dev | [Installation Plan](n8n-installation-plan.md) |
+| **WSL2 (Local)** | OPERATIONAL | https://your.ngrok.domain | [Installation Plan](n8n-installation-plan.md) |
 | **Coolify (Cloud)** | PLANNING | https://n8n-apex.aiwithapex.com | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) |
 
 ---

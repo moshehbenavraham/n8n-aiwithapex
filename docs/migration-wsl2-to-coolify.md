@@ -9,7 +9,7 @@ This guide covers migrating from the WSL2 local deployment to the Coolify cloud 
 | Source | Destination |
 |--------|-------------|
 | WSL2 Ubuntu (local) | Coolify (cloud) |
-| https://n8n.aiwithapex.ngrok.dev | https://n8n-apex.aiwithapex.com |
+| https://your.ngrok.domain | https://n8n-apex.aiwithapex.com |
 | `docker-compose.yml` | `docker-compose.coolify.yml` |
 | ngrok tunnel | Traefik reverse proxy |
 
@@ -196,8 +196,8 @@ External services calling webhooks must be updated:
 
 | Service | Old URL | New URL |
 |---------|---------|---------|
-| GitHub Webhooks | https://n8n.aiwithapex.ngrok.dev/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
-| Stripe Webhooks | https://n8n.aiwithapex.ngrok.dev/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
+| GitHub Webhooks | https://your.ngrok.domain/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
+| Stripe Webhooks | https://your.ngrok.domain/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
 | Other Services | ... | ... |
 
 ### Update n8n Workflows

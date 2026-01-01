@@ -8,7 +8,7 @@ This project supports **two deployment forms**:
 
 | Deployment | Environment | URL | Status |
 |------------|-------------|-----|--------|
-| **WSL2 (Local)** | Ubuntu on Windows | https://n8n.aiwithapex.ngrok.dev | Operational |
+| **WSL2 (Local)** | Ubuntu on Windows | https://your.ngrok.domain | Operational |
 | **Coolify (Cloud)** | Coolify-managed server | https://n8n-apex.aiwithapex.com | Planning |
 
 See [Deployment Comparison](docs/deployment-comparison.md) for detailed differences.
@@ -25,7 +25,7 @@ docker compose up -d
 open http://localhost:5678
 
 # Access n8n (external via ngrok)
-open https://n8n.aiwithapex.ngrok.dev
+open https://your.ngrok.domain
 ```
 
 ## Quick Start (Coolify)
@@ -51,7 +51,7 @@ See [Deploy to Coolify](docs/ongoing-roadmap/deploy-to-coolify.md) for cloud dep
 | Service | Port | URL |
 |---------|------|-----|
 | n8n UI | 5678 | http://localhost:5678 |
-| n8n (external) | 443 | https://n8n.aiwithapex.ngrok.dev |
+| n8n (external) | 443 | https://your.ngrok.domain |
 | ngrok Inspector | 4040 | http://localhost:4040 |
 | PostgreSQL | 5432 (internal) | Database |
 | Redis | 6386 (internal) | Queue broker |

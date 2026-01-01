@@ -70,7 +70,7 @@ n8n-worker     Up (healthy)
 3. Save credentials securely
 
 ### External Access (via ngrok)
-1. Open https://n8n.aiwithapex.ngrok.dev
+1. Open https://your.ngrok.domain
 2. Authenticate with Google (allowed domains only)
 3. Log in with n8n credentials
 
@@ -80,7 +80,7 @@ n8n-worker     Up (healthy)
 - [x] Health check passes: `curl localhost:5678/healthz`
 - [x] UI accessible: http://localhost:5678
 - [x] Tunnel active: `./scripts/tunnel-manage.sh status`
-- [x] External access: https://n8n.aiwithapex.ngrok.dev
+- [x] External access: https://your.ngrok.domain
 - [x] Can create test workflow
 
 ## Environment Variables

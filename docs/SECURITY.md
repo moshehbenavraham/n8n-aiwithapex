@@ -166,7 +166,7 @@ Secure cookies are enabled because external access is via HTTPS (ngrok tunnel).
 
 ### Why Enabled
 
-- **HTTPS via ngrok**: All external access uses `https://n8n.aiwithapex.ngrok.dev`
+- **HTTPS via ngrok**: All external access uses `https://your.ngrok.domain`
 - **Cookie security**: Prevents session hijacking over insecure connections
 - **Browser compatibility**: Modern browsers require Secure flag for cross-site cookies
 
