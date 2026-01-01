@@ -49,7 +49,7 @@ services:
       - n8n-network
 
   n8n:
-    image: n8nio/n8n:2.1.4
+    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
     container_name: n8n-main
     restart: unless-stopped
     ports:
@@ -156,7 +156,7 @@ services:
       - n8n-network
 
   n8n-worker:
-    image: n8nio/n8n:2.1.4
+    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
     restart: unless-stopped
     command: worker
     logging:

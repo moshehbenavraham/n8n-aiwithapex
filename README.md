@@ -2,6 +2,8 @@
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, and distributed workers.
 
+Designed to work with custom n8n fork: https://github.com/moshehbenavraham/n8n
+
 ## Deployment Options
 
 This project supports **two deployment forms**:
@@ -9,7 +11,7 @@ This project supports **two deployment forms**:
 | Deployment | Environment | URL | Status |
 |------------|-------------|-----|--------|
 | **WSL2 (Local)** | Ubuntu on Windows | https://your.ngrok.domain | Operational |
-| **Coolify (Cloud)** | Coolify-managed server | https://n8n-apex.aiwithapex.com | Planning |
+| **Coolify (Cloud)** | Coolify-managed server | https://your.custom.vps.domain | Planning |
 
 See [Deployment Comparison](docs/deployment-comparison.md) for detailed differences.
 
