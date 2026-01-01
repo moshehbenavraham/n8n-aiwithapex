@@ -121,14 +121,3 @@ curl localhost:5678/healthz       # n8n health endpoint
 ./scripts/backup-all.sh           # Full backup
 ./scripts/view-logs.sh -f         # Follow logs
 ```
-
-## Project Status
-
-See [PRD](.spec_system/PRD/PRD.md) for full details.
-
-| Phase | Name | Status |
-|-------|------|--------|
-| 00 | Foundation and Core Infrastructure | Complete |
-| 01 | Operations and Optimization | Complete |
-| 02 | External Access and Tunnel Infrastructure | Complete |
-| 03 | Resilience and Security Hardening | In Progress (25%) |
