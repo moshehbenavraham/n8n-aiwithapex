@@ -87,6 +87,7 @@ services:
       N8N_METRICS: ${N8N_METRICS}
       # Security
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
+      N8N_TRUST_PROXY: ${N8N_TRUST_PROXY:-true}
       # Worker offloading
       OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
       # Logging
