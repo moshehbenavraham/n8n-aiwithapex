@@ -2,6 +2,8 @@
 
 This n8n installation supports two deployment forms. This document provides a side-by-side comparison to help you choose the right approach.
 
+> **Custom Fork Optimized**: Both deployment forms are designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The fork enables custom branding and white-labeling while maintaining full compatibility with this deployment infrastructure.
+
 ---
 
 ## Quick Reference

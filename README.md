@@ -2,7 +2,7 @@
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, and distributed workers.
 
-Designed to work with custom n8n fork: https://github.com/moshehbenavraham/n8n
+> **Optimized for Custom Fork**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The fork enables custom branding, white-labeling, and enterprise customizations while maintaining upstream compatibility. See [Custom Fork Guide](docs/ongoing-roadmap/custom-fork.md) for details.
 
 ## Deployment Options
 

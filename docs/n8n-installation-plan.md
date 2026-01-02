@@ -4,6 +4,8 @@
 >
 > This plan provides a production-grade n8n installation on local WSL2 Ubuntu using Docker Compose with PostgreSQL, Redis, and worker scaling for maximum performance.
 
+> **Custom Fork Support**: This deployment infrastructure is optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between the official and custom fork images via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](ongoing-roadmap/custom-fork.md) for branding and customization details.
+
 ---
 
 ## Table of Contents

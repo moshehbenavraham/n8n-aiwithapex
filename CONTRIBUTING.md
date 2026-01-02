@@ -2,6 +2,8 @@
 
 Guidelines for maintaining and extending this n8n installation.
 
+> **Custom Fork Optimized**: This deployment infrastructure is designed to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). See [Custom Fork Guide](docs/ongoing-roadmap/custom-fork.md) for fork development workflow and upstream sync procedures.
+
 ## Branch Conventions
 
 - `main` - Production-ready configuration

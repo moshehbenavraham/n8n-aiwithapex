@@ -4,6 +4,8 @@
 > **Date**: 2025-12-28
 > **Target**: Replace one-click n8n service with full production stack
 
+> **Custom Fork Optimized**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The Coolify deployment supports both the official n8n image and the custom fork image via environment variable configuration.
+
 ---
 
 ## Table of Contents

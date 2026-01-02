@@ -2,6 +2,8 @@
 
 Day-to-day operations for the n8n stack.
 
+> **Custom Fork Optimized**: This deployment infrastructure supports our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between official and custom fork images via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](ongoing-roadmap/custom-fork.md) for development workflow.
+
 ## Service Management
 
 | Command | Purpose |
