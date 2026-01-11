@@ -131,7 +131,7 @@ services:
       # Security
       - N8N_SECURE_COOKIE=true
 
-      # Privacy (disable telemetry to Anthropic/n8n)
+      # Privacy (disable telemetry)
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
 
