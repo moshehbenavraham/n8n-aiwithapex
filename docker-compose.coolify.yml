@@ -396,8 +396,9 @@ services:
   # ===========================================
   runner-worker-1:
     image: n8nio/runners:latest
+    user: "0:0"
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec /usr/local/bin/launcher"]
+    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-1:5679
@@ -427,8 +428,9 @@ services:
   # ===========================================
   runner-worker-2:
     image: n8nio/runners:latest
+    user: "0:0"
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec /usr/local/bin/launcher"]
+    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-2:5679
@@ -458,8 +460,9 @@ services:
   # ===========================================
   runner-worker-3:
     image: n8nio/runners:latest
+    user: "0:0"
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec /usr/local/bin/launcher"]
+    entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-3:5679
