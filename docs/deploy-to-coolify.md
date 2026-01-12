@@ -2,7 +2,7 @@
 
 > **Status**: ✅ Deployed & Running (Data Migrated)
 > **Service UUID**: `s0sw00s8swwk4w88kgkkgg0k`
-> **URL**: https://n8n-apex.aiwithapex.com
+> **URL**: https://n8n.aiwithapex.com
 
 ---
 
@@ -38,9 +38,10 @@ Internet → Traefik → n8n-main (:5678)
 All complete:
 - [x] Service deployed via Coolify API
 - [x] All 6 containers running and healthy
-- [x] Domain configured: https://n8n-apex.aiwithapex.com
+- [x] Domain configured: https://n8n.aiwithapex.com
 - [x] Health, metrics, signin all verified working
 - [x] Data migrated from old one-click install (137 workflows, 72 credentials, 3,570 executions)
+- [x] Custom image fixes applied (N8N_RELEASE_TYPE, DB host, community nodes)
 
 ---
 
@@ -97,9 +98,9 @@ curl -X PATCH "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kg
 ## Validation
 
 ```bash
-curl -s "https://n8n-apex.aiwithapex.com/healthz"                        # Health
-curl -s "https://n8n-apex.aiwithapex.com/metrics" | head -20             # Metrics
-curl -s -o /dev/null -w "%{http_code}" "https://n8n-apex.aiwithapex.com/signin"  # UI
+curl -s "https://n8n.aiwithapex.com/healthz"                        # Health
+curl -s "https://n8n.aiwithapex.com/metrics" | head -20             # Metrics
+curl -s -o /dev/null -w "%{http_code}" "https://n8n.aiwithapex.com/signin"  # UI
 ```
 
 ---
@@ -178,6 +179,35 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 | Redis connection | `docker exec redis-<uuid> redis-cli ping` |
 | Workers idle | `docker logs n8n-worker-1-<uuid>` |
 
+### Known Issues & Fixes (Custom Image)
+
+| Issue | Symptom | Fix |
+|-------|---------|-----|
+| Invalid N8N_RELEASE_TYPE | Startup error about invalid release type | Add `N8N_RELEASE_TYPE=stable` to all n8n containers |
+| DB connection fails | Cannot connect to postgres | Change `DB_POSTGRESDB_HOST` to full container name (e.g., `postgres-s0sw00s8swwk4w88kgkkgg0k`) |
+| Community nodes missing | Workflows fail with "node not found" | Install nodes to `/home/node/.n8n/.n8n/nodes/` (note the double `.n8n` path) |
+
+### Installing Community Nodes
+
+Community nodes (e.g., elevenlabs, tavily) must be installed in the correct path inside the container:
+
+```bash
+# Exec into the main n8n container
+docker exec -it n8n-<uuid> sh
+
+# Install community nodes
+cd /home/node/.n8n/.n8n/nodes/
+npm install n8n-nodes-elevenlabs n8n-nodes-tavily
+
+# Restart the service for nodes to be recognized
+```
+
+Or via Coolify API:
+```bash
+curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgkkgg0k/restart" \
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN}"
+```
+
 ---
 
 ## Configuration Reference
@@ -189,6 +219,7 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 
 ### Required Variables (set in Coolify)
 - `N8N_ENCRYPTION_KEY` - Set in Coolify env vars (migrated from old instance)
+- `N8N_RELEASE_TYPE` - Set to `stable` (custom image defaults to `custom` which causes errors)
 - `POSTGRES_DB` - Database name (default: n8n)
 - `N8N_LOG_LEVEL` - info, warn, error, debug
 

@@ -49,6 +49,10 @@ log_success() {
 	echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') [backup-postgres] $1" | tee -a "$LOG_FILE"
 }
 
+log_warn() {
+	echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') [backup-postgres] $1" | tee -a "$LOG_FILE"
+}
+
 check_container() {
 	if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 		log_error "Container ${CONTAINER_NAME} is not running"
@@ -78,6 +82,24 @@ main() {
 		# Verify backup file was created and has content
 		if [[ -s "$BACKUP_FILE" ]]; then
 			BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+			BACKUP_SIZE_BYTES=$(stat -c%s "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE" 2>/dev/null)
+
+			# Minimum expected size: 10KB (10000 bytes)
+			# Empty database dumps are typically < 1KB
+			# Normal n8n database dumps are 15-30MB+
+			MIN_BACKUP_SIZE=10000
+
+			if [[ "$BACKUP_SIZE_BYTES" -lt "$MIN_BACKUP_SIZE" ]]; then
+				log_warn "==================================================="
+				log_warn "CRITICAL: Backup file is suspiciously small!"
+				log_warn "Size: ${BACKUP_SIZE} (${BACKUP_SIZE_BYTES} bytes)"
+				log_warn "Expected: > 10KB for a database with data"
+				log_warn "This may indicate an EMPTY DATABASE - possible data loss!"
+				log_warn "File: ${BACKUP_FILE}"
+				log_warn "==================================================="
+				# Still exit 0 - backup succeeded, but warn loudly
+			fi
+
 			log_success "Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
 			exit 0
 		else

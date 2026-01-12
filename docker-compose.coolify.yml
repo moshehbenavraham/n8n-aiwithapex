@@ -1,5 +1,4 @@
 # n8n Production Stack for Coolify Deployment
-# Domain: n8n-apex.aiwithapex.com
 #
 # Features:
 # - Queue mode with Redis
@@ -20,6 +19,11 @@
 # - N8N_ENCRYPTION_KEY: Must match existing instance to decrypt credentials
 # - POSTGRES_DB: Database name (default: n8n)
 # - N8N_LOG_LEVEL: Logging verbosity (default: info)
+#
+# Coolify-Specific Fixes Applied:
+# - N8N_RELEASE_TYPE=stable: Custom image sets 'custom' by default, override to 'stable'
+# - DB_POSTGRESDB_HOST: If connection fails, may need full container name (e.g., postgres-<uuid>)
+# - Community nodes: Install to /home/node/.n8n/.n8n/nodes/ (double .n8n path)
 
 services:
   # ===========================================
@@ -135,6 +139,9 @@ services:
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
 
+      # Custom Image Fix - Override default release type
+      - N8N_RELEASE_TYPE=stable
+
       # Worker Offloading
       - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
 
@@ -178,6 +185,8 @@ services:
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
       - N8N_USER_FOLDER=/home/node/.n8n
+      # Custom Image Fix
+      - N8N_RELEASE_TYPE=stable
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
@@ -227,6 +236,8 @@ services:
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
       - N8N_USER_FOLDER=/home/node/.n8n
+      # Custom Image Fix
+      - N8N_RELEASE_TYPE=stable
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
@@ -276,6 +287,8 @@ services:
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
       - N8N_USER_FOLDER=/home/node/.n8n
+      # Custom Image Fix
+      - N8N_RELEASE_TYPE=stable
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis

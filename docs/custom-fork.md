@@ -10,7 +10,6 @@
 
 | Aspect | Details |
 |--------|---------|
-| **Local Path** | `/home/aiwithapex/projects/n8n/` |
 | **GitHub Repo** | `github.com/moshehbenavraham/n8n` |
 | **Upstream** | `github.com/n8n-io/n8n` |
 | **Current Branch** | `master` |

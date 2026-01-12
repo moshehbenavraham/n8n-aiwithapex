@@ -13,7 +13,7 @@ This project supports two deployment forms. See [Deployment Comparison](deployme
 | Deployment | Status | URL | Documentation |
 |------------|--------|-----|---------------|
 | **WSL2 (Local)** | OPERATIONAL | https://your.ngrok.domain | [Installation Plan](n8n-installation-plan.md) |
-| **Coolify (Cloud)** | PLANNING | https://n8n-apex.aiwithapex.com | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) |
+| **Coolify (Cloud)** | PLANNING | https://n8n.aiwithapex.com | [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md) |
 
 ---
 
@@ -193,7 +193,7 @@ docker compose up -d --scale n8n-worker=5
 ## Coolify Cloud Deployment
 
 **Status**: PLANNING
-**Target URL**: https://n8n-apex.aiwithapex.com
+**Target URL**: https://n8n.aiwithapex.com
 **Documentation**: [Deploy to Coolify](ongoing-roadmap/deploy-to-coolify.md)
 
 ### Current State
@@ -207,7 +207,7 @@ The Coolify deployment is currently in planning phase. A one-click n8n service e
 | Database | PostgreSQL (basic) | PostgreSQL (tuned) |
 | Redis | None | Redis 7.4.7 |
 | Workers | None | 3 workers |
-| Domain | n8n.aiwithapex.com | n8n-apex.aiwithapex.com |
+| Domain | n8n.aiwithapex.com | n8n.aiwithapex.com |
 
 ### Pre-Deployment Checklist
 

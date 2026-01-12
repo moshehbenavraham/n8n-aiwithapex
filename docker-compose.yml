@@ -118,8 +118,7 @@ services:
       #   - qwen2.5:7b (general/coding)
       #   - nomic-embed-text (embeddings for RAG)
       #
-      # With this network connection, n8n can reach Ollama at:
-      #   Base URL: http://luminari-ollama:11434
+      # With this network connection, n8n can reach Ollama
       #
       # To use in n8n:
       #   1. Create an "Ollama" credential with Base URL above
@@ -156,8 +155,12 @@ services:
     networks:
       - n8n-network
 
-  n8n-worker:
+  # ===========================================
+  # n8n Worker 1
+  # ===========================================
+  n8n-worker-1:
     image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    container_name: n8n-worker-1
     restart: unless-stopped
     command: worker
     logging:
@@ -165,11 +168,6 @@ services:
       options:
         max-size: "100m"
         max-file: "5"
-    deploy:
-      replicas: 3
-      resources:
-        limits:
-          memory: 512M
     environment:
       # Database
       DB_TYPE: ${DB_TYPE}
@@ -190,6 +188,11 @@ services:
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
       # Worker scaling
       EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
       # Logging
       N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
       N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
@@ -205,10 +208,239 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - n8n-network
-      # Workers also need Ollama access since they execute AI workflows
-      # (see comment on n8n service above for details)
+      - ollama-network
+
+  # ===========================================
+  # n8n Worker 2
+  # ===========================================
+  n8n-worker-2:
+    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    container_name: n8n-worker-2
+    restart: unless-stopped
+    command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      # Database
+      DB_TYPE: ${DB_TYPE}
+      DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
+      DB_POSTGRESDB_PORT: ${DB_POSTGRESDB_PORT}
+      DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
+      DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
+      DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      # Core configuration
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      N8N_USER_FOLDER: ${N8N_USER_FOLDER}
+      # Queue mode
+      EXECUTIONS_MODE: ${EXECUTIONS_MODE}
+      QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
+      QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
+      QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      # Worker scaling
+      EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      # Logging
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./data/n8n/files:/home/node/.n8n/files
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -x node || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - n8n-network
+      - ollama-network
+
+  # ===========================================
+  # n8n Worker 3
+  # ===========================================
+  n8n-worker-3:
+    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    container_name: n8n-worker-3
+    restart: unless-stopped
+    command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      # Database
+      DB_TYPE: ${DB_TYPE}
+      DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
+      DB_POSTGRESDB_PORT: ${DB_POSTGRESDB_PORT}
+      DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
+      DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
+      DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      # Core configuration
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      N8N_USER_FOLDER: ${N8N_USER_FOLDER}
+      # Queue mode
+      EXECUTIONS_MODE: ${EXECUTIONS_MODE}
+      QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
+      QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
+      QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      # Worker scaling
+      EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      # Logging
+      N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+      N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./data/n8n/files:/home/node/.n8n/files
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -x node || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - n8n-network
+      - ollama-network
+
+  # ===========================================
+  # Task Runner for Worker 1
+  # ===========================================
+  runner-worker-1:
+    image: n8nio/runners:latest
+    container_name: n8n-runner-worker-1
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-1:5679
+      N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+    depends_on:
+      n8n-worker-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5680/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - n8n-network
+      - ollama-network
+
+  # ===========================================
+  # Task Runner for Worker 2
+  # ===========================================
+  runner-worker-2:
+    image: n8nio/runners:latest
+    container_name: n8n-runner-worker-2
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-2:5679
+      N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+    depends_on:
+      n8n-worker-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5680/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - n8n-network
+      - ollama-network
+
+  # ===========================================
+  # Task Runner for Worker 3
+  # ===========================================
+  runner-worker-3:
+    image: n8nio/runners:latest
+    container_name: n8n-runner-worker-3
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    environment:
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-3:5679
+      N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
+    depends_on:
+      n8n-worker-3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5680/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - n8n-network
       - ollama-network
 
 networks:
@@ -219,20 +451,20 @@ networks:
   # =============================================================================
   # EXTERNAL NETWORK: Ollama (Local LLM)
   # =============================================================================
-  # This references the existing network created by the lore-sage project
-  # (docker-compose project name: "lore").
+  # This references the existing network created by the another project
   #
-  # The network was created when lore-sage's docker-compose.yml was started.
+  # The network was created when the other project's docker-compose.yml was started.
   # By marking it as "external: true", we tell Docker Compose:
   #   "Don't create this network - it already exists, just connect to it"
   #
-  # This allows n8n containers to communicate with luminari-ollama container
+  # This allows n8n containers to communicate with the other project's container
   # using Docker's internal DNS (container names resolve automatically).
   #
   # If Ollama is not running, n8n will still start - it just won't be able
   # to reach Ollama until that container is up.
   #
-  # Network created by: /home/aiwithapex/projects/lore-sage/docker-compose.yml
+  # If you are using this type of setup, change the name below to the name of the
+  # other project's network
   # =============================================================================
   ollama-network:
     external: true

@@ -401,7 +401,7 @@ Operations for the Coolify cloud deployment differ from WSL2. This section cover
 ### Dashboard Access
 
 - **Coolify Dashboard**: https://coolify.aiwithapex.com
-- **n8n Production**: https://n8n-apex.aiwithapex.com (planned)
+- **n8n Production**: https://n8n.aiwithapex.com (planned)
 
 ### Essential Operations (Coolify)
 
@@ -441,10 +441,10 @@ curl -X POST "${COOLIFY_API_URL}/applications/<uuid>/start" \
 
 ```bash
 # n8n health endpoint
-curl -s "https://n8n-apex.aiwithapex.com/healthz"
+curl -s "https://n8n.aiwithapex.com/healthz"
 
 # Prometheus metrics
-curl -s "https://n8n-apex.aiwithapex.com/metrics" | head -20
+curl -s "https://n8n.aiwithapex.com/metrics" | head -20
 ```
 
 ### Log Access (Coolify)
@@ -477,7 +477,7 @@ To adjust worker count in Coolify:
 
 ```bash
 # Export via n8n API
-curl -X GET "https://n8n-apex.aiwithapex.com/api/v1/workflows" \
+curl -X GET "https://n8n.aiwithapex.com/api/v1/workflows" \
   -H "X-N8N-API-KEY: <api-key>" > workflows-backup.json
 
 # Database dump (via Coolify server SSH)

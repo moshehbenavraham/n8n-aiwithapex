@@ -1,5 +1,7 @@
 # n8n with Local LLMs: Complete Setup Guide
 
+**This is for a specific laptop build, you can use it as framework to adjust recommendations to your rig**
+
 **Document Version:** 1.0
 **Last Updated:** December 30, 2025
 **System:** WSL2 Ubuntu 24.04 with NVIDIA RTX 5070 Laptop GPU

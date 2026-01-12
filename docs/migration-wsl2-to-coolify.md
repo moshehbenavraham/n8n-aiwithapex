@@ -11,7 +11,7 @@ This guide covers migrating from the WSL2 local deployment to the Coolify cloud 
 | Source | Destination |
 |--------|-------------|
 | WSL2 Ubuntu (local) | Coolify (cloud) |
-| https://your.ngrok.domain | https://n8n-apex.aiwithapex.com |
+| https://your.ngrok.domain | https://n8n.aiwithapex.com |
 | `docker-compose.yml` | `docker-compose.coolify.yml` |
 | ngrok tunnel | Traefik reverse proxy |
 
@@ -180,7 +180,7 @@ docker exec -i postgres-<uuid> psql -U n8n n8n < /tmp/migration-export.sql
 
 ```bash
 # Check health
-curl -s "https://n8n-apex.aiwithapex.com/healthz"
+curl -s "https://n8n.aiwithapex.com/healthz"
 
 # Login and verify:
 # - Workflows appear
@@ -198,8 +198,8 @@ External services calling webhooks must be updated:
 
 | Service | Old URL | New URL |
 |---------|---------|---------|
-| GitHub Webhooks | https://your.ngrok.domain/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
-| Stripe Webhooks | https://your.ngrok.domain/webhook/... | https://n8n-apex.aiwithapex.com/webhook/... |
+| GitHub Webhooks | https://your.ngrok.domain/webhook/... | https://n8n.aiwithapex.com/webhook/... |
+| Stripe Webhooks | https://your.ngrok.domain/webhook/... | https://n8n.aiwithapex.com/webhook/... |
 | Other Services | ... | ... |
 
 ### Update n8n Workflows
@@ -303,7 +303,7 @@ docker exec n8n-postgres pg_dump -U n8n --no-owner n8n > migration-export.sql
 **Cause**: Domain not configured or DNS not propagated
 
 **Solution**:
-1. Verify DNS: `nslookup n8n-apex.aiwithapex.com`
+1. Verify DNS: `nslookup n8n.aiwithapex.com`
 2. Check Coolify domain settings
 3. Verify Traefik is routing correctly
 4. Check n8n logs for errors

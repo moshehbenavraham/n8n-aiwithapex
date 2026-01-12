@@ -13,7 +13,7 @@ This n8n installation supports two deployment forms. This document provides a si
 | **Status** | Operational | Planning |
 | **Primary Use** | Development, local automation | Production, cloud-hosted |
 | **Docker Compose File** | `docker-compose.yml` | `docker-compose.coolify.yml` |
-| **External URL** | https://your.ngrok.domain | https://n8n-apex.aiwithapex.com |
+| **External URL** | https://your.ngrok.domain | https://n8n.aiwithapex.com |
 | **Documentation** | [n8n-installation-plan.md](n8n-installation-plan.md) | [deploy-to-coolify.md](ongoing-roadmap/deploy-to-coolify.md) |
 
 ---
@@ -72,8 +72,8 @@ Internet → Traefik (Coolify-managed) → Docker → n8n Stack
 |---------|------|---------|
 | External Access | ngrok tunnel | Direct Traefik routing |
 | OAuth Protection | ngrok Edge traffic policy | Traefik middleware or n8n auth |
-| Webhook URL | https://your.ngrok.domain/webhook/* | https://n8n-apex.aiwithapex.com/webhook/* |
-| UI Access | http://localhost:5678 or via ngrok | https://n8n-apex.aiwithapex.com |
+| Webhook URL | https://your.ngrok.domain/webhook/* | https://n8n.aiwithapex.com/webhook/* |
+| UI Access | http://localhost:5678 or via ngrok | https://n8n.aiwithapex.com |
 | Inspector/Debug | http://localhost:4040 (ngrok) | Coolify dashboard |
 
 ### Service Configuration

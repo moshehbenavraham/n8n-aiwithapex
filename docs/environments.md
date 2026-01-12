@@ -129,7 +129,7 @@ If deploying to production, consider:
 
 | Environment | URL | Purpose |
 |-------------|-----|---------|
-| Production | https://n8n-apex.aiwithapex.com | Cloud-hosted workflows |
+| Production | https://n8n.aiwithapex.com | Cloud-hosted workflows |
 | Coolify Dashboard | https://coolify.aiwithapex.com | Infrastructure management |
 
 ### Configuration
