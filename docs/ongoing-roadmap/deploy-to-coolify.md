@@ -1,6 +1,6 @@
 # Deploy n8n Stack to Coolify
 
-> **Status**: ✅ Deployed & Running
+> **Status**: ✅ Deployed & Running (Data Migrated)
 > **Service UUID**: `s0sw00s8swwk4w88kgkkgg0k`
 > **URL**: https://n8n-apex.aiwithapex.com
 
@@ -40,17 +40,18 @@ All complete:
 - [x] All 6 containers running and healthy
 - [x] Domain configured: https://n8n-apex.aiwithapex.com
 - [x] Health, metrics, signin all verified working
+- [x] Data migrated from old one-click install (137 workflows, 72 credentials, 3,570 executions)
 
 ---
 
 ## Key UUIDs
 
-| Resource | UUID |
-|----------|------|
-| Server | `rcgk0og40w0kwogock4k44s0` |
-| Project | `m4cck40w0go4k88gwcg4k400` |
-| Old n8n Service | `g8wow80sgg8oo0csg4sgkws0` |
-| **New n8n-production** | `s0sw00s8swwk4w88kgkkgg0k` |
+| Resource | UUID | Status |
+|----------|------|--------|
+| Server | `rcgk0og40w0kwogock4k44s0` | Active |
+| Project | `m4cck40w0go4k88gwcg4k400` | Active |
+| Old n8n Service (one-click) | `g8wow80sgg8oo0csg4sgkws0` | Deprecated (data migrated) |
+| **n8n-production** | `s0sw00s8swwk4w88kgkkgg0k` | Active |
 
 ---
 
@@ -103,41 +104,51 @@ curl -s -o /dev/null -w "%{http_code}" "https://n8n-apex.aiwithapex.com/signin" 
 
 ---
 
-## Data Migration (Future)
+## Data Migration (Completed)
 
-Current deployment is fresh (no data). To migrate from old instance:
+Data successfully migrated from old one-click install on 2026-01-12.
 
-**Option A: API Export/Import**
-```bash
-# Export from old
-curl -X GET "https://n8n.aiwithapex.com/api/v1/workflows" \
-  -H "X-N8N-API-KEY: <old-api-key>" > workflows.json
+### What Was Migrated
+- 137 workflows
+- 72 credentials (encrypted with original key)
+- 3,570 execution records
+- 1 user account
 
-# Import to new (after setting up API key)
-```
+### Migration Process Used
 
-**Option B: Database Dump**
-```bash
-# Export
-docker exec postgresql-g8wow80sgg8oo0csg4sgkws0 pg_dump -U postgres -d n8n > backup.sql
+1. **Found encryption key** from old instance config at `/data/coolify/services/g8wow80sgg8oo0csg4sgkws0/`
 
-# Import (stop n8n first)
-docker exec -i postgres-s0sw00s8swwk4w88kgkkgg0k psql -U postgres -d n8n < backup.sql
-```
+2. **Set encryption key** on new instance via Coolify API
+
+3. **Exported database** from old PostgreSQL:
+   ```bash
+   sudo docker run --rm -d --name temp-pg-export \
+     -v g8wow80sgg8oo0csg4sgkws0_postgresql-data:/var/lib/postgresql/data \
+     -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<pass> \
+     postgres:16-alpine
+
+   sudo docker exec temp-pg-export pg_dump -U <user> n8n > n8n_backup.sql
+   ```
+
+4. **Imported to new instance**:
+   ```bash
+   docker exec -i <new-postgres-container> psql -U n8n -d n8n < n8n_backup.sql
+   ```
+
+5. **Fixed config file mismatch**: Updated encryption key in volume config to match env var
 
 ---
 
-## Rollback
+## Old Service Cleanup
 
-Old service at `n8n.aiwithapex.com` remains running. To rollback:
+The old one-click install at `n8n.aiwithapex.com` is deprecated. To stop it:
 
 ```bash
-# Stop new service
-curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgkkgg0k/stop" \
+curl -X POST "https://coolify.aiwithapex.com/api/v1/services/g8wow80sgg8oo0csg4sgkws0/stop" \
   -H "Authorization: Bearer ${COOLIFY_API_TOKEN}"
-
-# Old service is still at n8n.aiwithapex.com
 ```
+
+Data volumes remain at `/data/coolify/services/g8wow80sgg8oo0csg4sgkws0/` if rollback is ever needed.
 
 ---
 
@@ -177,7 +188,7 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 - `SERVICE_USER_POSTGRES` / `SERVICE_PASSWORD_POSTGRES`
 
 ### Required Variables (set in Coolify)
-- `N8N_ENCRYPTION_KEY` - For credential decryption
+- `N8N_ENCRYPTION_KEY` - Set in Coolify env vars (migrated from old instance)
 - `POSTGRES_DB` - Database name (default: n8n)
 - `N8N_LOG_LEVEL` - info, warn, error, debug
 
