@@ -351,6 +351,7 @@ services:
   # ===========================================
   runner-init:
     image: alpine:latest
+    restart: "no"
     command: |
       sh -c 'cat > /config/n8n-task-runners.json << "EOF"
       {
