@@ -141,6 +141,8 @@ services:
 
       # Custom Image Fix - Override default release type
       - N8N_RELEASE_TYPE=stable
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_PYTHON_ENABLED=true
 
       # Worker Offloading
       - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
@@ -187,6 +189,8 @@ services:
       - N8N_USER_FOLDER=/home/node/.n8n
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_PYTHON_ENABLED=true
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
@@ -202,7 +206,8 @@ services:
       - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
       - N8N_LOG_OUTPUT=console
     volumes:
-      - n8n-data:/home/node/.n8n:ro
+      # Note: Workers need write access for crash journals, temp execution data, and task runner registration
+      - n8n-data:/home/node/.n8n
     depends_on:
       n8n:
         condition: service_healthy
@@ -238,6 +243,8 @@ services:
       - N8N_USER_FOLDER=/home/node/.n8n
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_PYTHON_ENABLED=true
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
@@ -253,7 +260,8 @@ services:
       - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
       - N8N_LOG_OUTPUT=console
     volumes:
-      - n8n-data:/home/node/.n8n:ro
+      # Note: Workers need write access for crash journals, temp execution data, and task runner registration
+      - n8n-data:/home/node/.n8n
     depends_on:
       n8n:
         condition: service_healthy
@@ -289,6 +297,8 @@ services:
       - N8N_USER_FOLDER=/home/node/.n8n
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_PYTHON_ENABLED=true
       # Queue Mode
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
@@ -304,7 +314,8 @@ services:
       - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
       - N8N_LOG_OUTPUT=console
     volumes:
-      - n8n-data:/home/node/.n8n:ro
+      # Note: Workers need write access for crash journals, temp execution data, and task runner registration
+      - n8n-data:/home/node/.n8n
     depends_on:
       n8n:
         condition: service_healthy

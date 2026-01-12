@@ -186,6 +186,7 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 | Invalid N8N_RELEASE_TYPE | Startup error about invalid release type | Add `N8N_RELEASE_TYPE=stable` to all n8n containers |
 | DB connection fails | Cannot connect to postgres | Change `DB_POSTGRESDB_HOST` to full container name (e.g., `postgres-s0sw00s8swwk4w88kgkkgg0k`) |
 | Community nodes missing | Workflows fail with "node not found" | Install nodes to `/home/node/.n8n/.n8n/nodes/` (note the double `.n8n` path) |
+| Worker crash on startup | `EROFS: read-only file system, open '/home/node/.n8n/.n8n/crash.journal'` | Remove `:ro` flag from worker volume mounts (workers need write access for crash journals, temp data, task runners) |
 
 ### Installing Community Nodes
 
@@ -228,4 +229,4 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 - Redis: maxmemory=256mb, noeviction, AOF persistence
 - Queue: QUEUE_WORKER_LOCK_DURATION=60000
 - Privacy: Telemetry disabled
-- Workers: Read-only volume mounts, 10 concurrency each
+- Workers: Shared volume with main instance, 10 concurrency each
