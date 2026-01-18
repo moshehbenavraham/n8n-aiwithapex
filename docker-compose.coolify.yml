@@ -230,7 +230,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
 
   # ===========================================
   # n8n Worker 2
@@ -287,7 +287,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
 
   # ===========================================
   # n8n Worker 3
@@ -344,7 +344,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
 
   # ===========================================
   # Runner Config Init (writes config on startup)
