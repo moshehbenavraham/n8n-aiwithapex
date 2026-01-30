@@ -1,5 +1,7 @@
 # n8n
 
+**Version 1.0.0**
+
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 
 > **Optimized for Custom Fork**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The fork enables custom branding, white-labeling, and enterprise customizations while maintaining upstream compatibility. See [Custom Fork Guide](docs/custom-fork.md) for details.
@@ -137,7 +139,7 @@ The stack connects to an external Ollama network for local LLM support:
 | Docker Compose | v2.0+ | Container orchestration |
 | PostgreSQL | 16.11-alpine | Persistent storage |
 | Redis | 7.4.7-alpine | Queue broker |
-| n8n | 2.1.4 | Workflow automation |
+| n8n | 2.6.1 (Obsidian Forge) | Workflow automation |
 | n8n Task Runners | latest | External code execution (JS/Python) |
 | ngrok | alpine | Secure tunnel with OAuth |
 

@@ -4,7 +4,7 @@
 # - Queue mode with Redis
 # - 3 workers (30 parallel executions)
 # - PostgreSQL 16.11 with tuned settings
-# - n8n 2.1.4 (pinned)
+# - n8n 2.6.1 (Obsidian Forge fork)
 # - Prometheus metrics
 # - Health checks on all services
 # - Privacy-respecting configuration

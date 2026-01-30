@@ -49,7 +49,7 @@ services:
       - n8n-network
 
   n8n:
-    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    image: ${N8N_IMAGE:-ghcr.io/moshehbenavraham/n8n:latest}
     container_name: n8n-main
     restart: unless-stopped
     ports:
@@ -84,10 +84,22 @@ services:
       EXECUTIONS_DATA_PRUNE: ${EXECUTIONS_DATA_PRUNE}
       EXECUTIONS_DATA_MAX_AGE: ${EXECUTIONS_DATA_MAX_AGE}
       EXECUTIONS_DATA_PRUNE_MAX_COUNT: ${EXECUTIONS_DATA_PRUNE_MAX_COUNT}
+      EXECUTIONS_TIMEOUT: 3600
+      N8N_CONCURRENCY_PRODUCTION_LIMIT: 50
       N8N_METRICS: ${N8N_METRICS}
+      N8N_METRICS_INCLUDE_QUEUE_METRICS: "true"
+      # Cache (shared via Redis)
+      N8N_CACHE_BACKEND: redis
       # Security
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
       N8N_TRUST_PROXY: ${N8N_TRUST_PROXY:-true}
+      # Graceful Shutdown
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: 60
+      # Privacy (disable telemetry)
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      # Custom Image Fix
+      N8N_RELEASE_TYPE: stable
       # Worker offloading
       OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
       # Logging
@@ -159,7 +171,7 @@ services:
   # n8n Worker 1
   # ===========================================
   n8n-worker-1:
-    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    image: ${N8N_IMAGE:-ghcr.io/moshehbenavraham/n8n:latest}
     container_name: n8n-worker-1
     restart: unless-stopped
     command: worker
@@ -180,19 +192,30 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_USER_FOLDER: ${N8N_USER_FOLDER}
+      # Custom Image Fix
+      N8N_RELEASE_TYPE: stable
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      N8N_PYTHON_ENABLED: "true"
       # Queue mode
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      QUEUE_WORKER_LOCK_DURATION: 60000
+      QUEUE_WORKER_STALLED_INTERVAL: 30000
       # Worker scaling
       EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
-      # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
-      N8N_RUNNERS_MODE: external
-      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
-      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      # Cache (shared via Redis)
+      N8N_CACHE_BACKEND: redis
+      # Graceful Shutdown
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: 60
+      # Privacy
+      N8N_DIAGNOSTICS_ENABLED: "false"
       # Logging
       N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
       N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
@@ -203,7 +226,7 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x node || exit 1"]
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -211,7 +234,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
     networks:
       - n8n-network
       - ollama-network
@@ -220,7 +243,7 @@ services:
   # n8n Worker 2
   # ===========================================
   n8n-worker-2:
-    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    image: ${N8N_IMAGE:-ghcr.io/moshehbenavraham/n8n:latest}
     container_name: n8n-worker-2
     restart: unless-stopped
     command: worker
@@ -241,19 +264,30 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_USER_FOLDER: ${N8N_USER_FOLDER}
+      # Custom Image Fix
+      N8N_RELEASE_TYPE: stable
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      N8N_PYTHON_ENABLED: "true"
       # Queue mode
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      QUEUE_WORKER_LOCK_DURATION: 60000
+      QUEUE_WORKER_STALLED_INTERVAL: 30000
       # Worker scaling
       EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
-      # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
-      N8N_RUNNERS_MODE: external
-      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
-      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      # Cache (shared via Redis)
+      N8N_CACHE_BACKEND: redis
+      # Graceful Shutdown
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: 60
+      # Privacy
+      N8N_DIAGNOSTICS_ENABLED: "false"
       # Logging
       N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
       N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
@@ -264,7 +298,7 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x node || exit 1"]
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -272,7 +306,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
     networks:
       - n8n-network
       - ollama-network
@@ -281,7 +315,7 @@ services:
   # n8n Worker 3
   # ===========================================
   n8n-worker-3:
-    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    image: ${N8N_IMAGE:-ghcr.io/moshehbenavraham/n8n:latest}
     container_name: n8n-worker-3
     restart: unless-stopped
     command: worker
@@ -302,19 +336,30 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_USER_FOLDER: ${N8N_USER_FOLDER}
+      # Custom Image Fix
+      N8N_RELEASE_TYPE: stable
+      # Task Runners - External Mode
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_RUNNERS_MODE: external
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      N8N_PYTHON_ENABLED: "true"
       # Queue mode
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
+      QUEUE_WORKER_LOCK_DURATION: 60000
+      QUEUE_WORKER_STALLED_INTERVAL: 30000
       # Worker scaling
       EXECUTIONS_CONCURRENCY: ${EXECUTIONS_CONCURRENCY}
-      # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
-      N8N_RUNNERS_MODE: external
-      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
-      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
+      # Cache (shared via Redis)
+      N8N_CACHE_BACKEND: redis
+      # Graceful Shutdown
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: 60
+      # Privacy
+      N8N_DIAGNOSTICS_ENABLED: "false"
       # Logging
       N8N_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
       N8N_LOG_OUTPUT: ${N8N_LOG_OUTPUT:-console}
@@ -325,7 +370,7 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x node || exit 1"]
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -333,7 +378,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
     networks:
       - n8n-network
       - ollama-network
@@ -355,6 +400,7 @@ services:
       N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-1:5679
       N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
       N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_TASK_TIMEOUT: 600
       N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
     volumes:
       - ./config/n8n-task-runners.json:/etc/n8n-task-runners.json:ro
@@ -392,6 +438,7 @@ services:
       N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-2:5679
       N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
       N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_TASK_TIMEOUT: 600
       N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
     volumes:
       - ./config/n8n-task-runners.json:/etc/n8n-task-runners.json:ro
@@ -429,6 +476,7 @@ services:
       N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-3:5679
       N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
       N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
+      N8N_RUNNERS_TASK_TIMEOUT: 600
       N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
     volumes:
       - ./config/n8n-task-runners.json:/etc/n8n-task-runners.json:ro
