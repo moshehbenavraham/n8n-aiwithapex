@@ -1,6 +1,6 @@
 # n8n
 
-**Version 1.0.0**
+**Version 1.1.0**
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 
@@ -13,7 +13,7 @@ This project supports **two deployment forms**:
 | Deployment | Environment | URL | Status |
 |------------|-------------|-----|--------|
 | **WSL2 (Local)** | Ubuntu on Windows | https://your.ngrok.domain | Operational |
-| **Coolify (Cloud)** | Coolify-managed server | https://your.custom.vps.domain | Planning |
+| **Coolify (Cloud)** | Coolify-managed server | https://your.custom.vps.domain | In Development |
 
 See [Deployment Comparison](docs/deployment-comparison.md) for detailed differences.
 

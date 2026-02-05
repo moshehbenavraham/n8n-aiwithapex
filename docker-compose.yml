@@ -24,6 +24,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
     networks:
       - n8n-network
 
@@ -31,7 +48,16 @@ services:
     image: redis:7.4.7-alpine
     container_name: n8n-redis
     restart: unless-stopped
-    command: redis-server --port ${REDIS_PORT}
+    # Production-ready Redis configuration with authentication
+    command: >
+      redis-server
+      --port ${REDIS_PORT}
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      --tcp-keepalive 300
     logging:
       driver: json-file
       options:
@@ -40,11 +66,27 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "${REDIS_PORT}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${REDIS_PORT}", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
     networks:
       - n8n-network
 
@@ -53,7 +95,7 @@ services:
     container_name: n8n-main
     restart: unless-stopped
     ports:
-      - "${N8N_PORT}:5678"
+      - "127.0.0.1:${N8N_PORT}:5678"
     logging:
       driver: json-file
       options:
@@ -67,11 +109,13 @@ services:
       DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
       DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
       DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      DB_POSTGRESDB_POOL_SIZE: 10
       # Core configuration
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_HOST: ${N8N_HOST}
       N8N_PORT: ${N8N_PORT}
       N8N_PROTOCOL: ${N8N_PROTOCOL}
+      N8N_EDITOR_BASE_URL: ${WEBHOOK_URL}
       WEBHOOK_URL: ${WEBHOOK_URL}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_USER_FOLDER: ${N8N_USER_FOLDER}
@@ -79,7 +123,10 @@ services:
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
+      QUEUE_WORKER_LOCK_DURATION: 60000
+      QUEUE_WORKER_STALLED_INTERVAL: 30000
       # Data management
       EXECUTIONS_DATA_PRUNE: ${EXECUTIONS_DATA_PRUNE}
       EXECUTIONS_DATA_MAX_AGE: ${EXECUTIONS_DATA_MAX_AGE}
@@ -119,6 +166,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
     networks:
       - n8n-network
       # =========================================================================
@@ -154,7 +212,7 @@ services:
     volumes:
       - ./config/ngrok.yml:/etc/ngrok.yml:ro
     ports:
-      - "${NGROK_INSPECTOR_PORT}:4040"
+      - "127.0.0.1:${NGROK_INSPECTOR_PORT}:4040"
     depends_on:
       n8n:
         condition: service_healthy
@@ -164,6 +222,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+        reservations:
+          memory: 64M
     networks:
       - n8n-network
 
@@ -181,6 +250,8 @@ services:
         max-size: "100m"
         max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      NODE_OPTIONS: "--max-old-space-size=768"
       # Database
       DB_TYPE: ${DB_TYPE}
       DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
@@ -188,6 +259,7 @@ services:
       DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
       DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
       DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      DB_POSTGRESDB_POOL_SIZE: 5
       # Core configuration
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
@@ -195,7 +267,6 @@ services:
       # Custom Image Fix
       N8N_RELEASE_TYPE: stable
       # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
       N8N_RUNNERS_MODE: external
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
       N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
@@ -204,6 +275,7 @@ services:
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
       QUEUE_WORKER_LOCK_DURATION: 60000
@@ -226,15 +298,22 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
     networks:
       - n8n-network
       - ollama-network
@@ -253,6 +332,8 @@ services:
         max-size: "100m"
         max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      NODE_OPTIONS: "--max-old-space-size=768"
       # Database
       DB_TYPE: ${DB_TYPE}
       DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
@@ -260,6 +341,7 @@ services:
       DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
       DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
       DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      DB_POSTGRESDB_POOL_SIZE: 5
       # Core configuration
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
@@ -267,7 +349,6 @@ services:
       # Custom Image Fix
       N8N_RELEASE_TYPE: stable
       # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
       N8N_RUNNERS_MODE: external
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
       N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
@@ -276,6 +357,7 @@ services:
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
       QUEUE_WORKER_LOCK_DURATION: 60000
@@ -298,15 +380,22 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
     networks:
       - n8n-network
       - ollama-network
@@ -325,6 +414,8 @@ services:
         max-size: "100m"
         max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      NODE_OPTIONS: "--max-old-space-size=768"
       # Database
       DB_TYPE: ${DB_TYPE}
       DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
@@ -332,6 +423,7 @@ services:
       DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
       DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
       DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+      DB_POSTGRESDB_POOL_SIZE: 5
       # Core configuration
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
@@ -339,7 +431,6 @@ services:
       # Custom Image Fix
       N8N_RELEASE_TYPE: stable
       # Task Runners - External Mode
-      N8N_RUNNERS_ENABLED: "true"
       N8N_RUNNERS_MODE: external
       N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
       N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
@@ -348,6 +439,7 @@ services:
       EXECUTIONS_MODE: ${EXECUTIONS_MODE}
       QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
       QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
       QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
       QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: ${QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD}
       QUEUE_WORKER_LOCK_DURATION: 60000
@@ -370,15 +462,22 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
     networks:
       - n8n-network
       - ollama-network
@@ -413,10 +512,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
     networks:
       - n8n-network
       - ollama-network
@@ -451,10 +557,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
     networks:
       - n8n-network
       - ollama-network
@@ -489,10 +602,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
     networks:
       - n8n-network
       - ollama-network

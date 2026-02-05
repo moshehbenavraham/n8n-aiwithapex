@@ -1,14 +1,15 @@
 # n8n Production Stack for Coolify Deployment
 #
 # Features:
-# - Queue mode with Redis
-# - 3 workers (30 parallel executions)
+# - Queue mode with Redis (password-protected)
+# - 3 workers (15 parallel executions)
 # - PostgreSQL 16.11 with tuned settings
 # - n8n 2.6.1 (Obsidian Forge fork)
 # - Prometheus metrics
 # - Health checks on all services
 # - Privacy-respecting configuration
 # - Python code node with stdlib support
+# - Security hardening (cap_drop, no-new-privileges)
 #
 # Coolify auto-injects:
 # - SERVICE_FQDN_N8N_5678 (domain routing)
@@ -19,6 +20,7 @@
 # Required Environment Variables (set in Coolify UI):
 # - N8N_ENCRYPTION_KEY: Must match existing instance to decrypt credentials
 # - N8N_RUNNERS_AUTH_TOKEN: Shared secret for runner authentication (generate with: openssl rand -hex 32)
+# - REDIS_PASSWORD: Redis authentication password (generate with: openssl rand -base64 32)
 # - POSTGRES_DB: Database name (default: n8n)
 # - N8N_LOG_LEVEL: Logging verbosity (default: info)
 #
@@ -54,6 +56,11 @@ services:
       - "max_connections=100"
       - "-c"
       - "checkpoint_completion_target=0.9"
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       POSTGRES_USER: ${SERVICE_USER_POSTGRES}
       POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
@@ -66,10 +73,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
 
   # ===========================================
   # Redis Queue Broker
@@ -77,27 +97,45 @@ services:
   redis:
     image: redis:7.4.7-alpine
     restart: unless-stopped
-    # Production-ready Redis configuration
+    # Production-ready Redis configuration with authentication
     command: >
       redis-server
       --port 6379
+      --requirepass ${REDIS_PASSWORD}
       --appendonly yes
       --appendfsync everysec
       --maxmemory 256mb
       --maxmemory-policy noeviction
       --tcp-keepalive 300
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
     deploy:
       resources:
         limits:
           memory: 384M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
 
   # ===========================================
   # n8n Main Instance (UI + Webhooks + API)
@@ -107,6 +145,11 @@ services:
     restart: unless-stopped
     ports:
       - "5678:5678"
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       # Database
       - DB_TYPE=postgresdb
@@ -130,6 +173,7 @@ services:
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
       - QUEUE_WORKER_LOCK_DURATION=60000
@@ -154,6 +198,7 @@ services:
 
       # Security
       - N8N_SECURE_COOKIE=true
+      - N8N_TRUST_PROXY=true
 
       # Privacy (disable telemetry)
       - N8N_DIAGNOSTICS_ENABLED=false
@@ -183,10 +228,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
 
   # ===========================================
   # n8n Worker 1
@@ -195,7 +247,14 @@ services:
     image: ghcr.io/moshehbenavraham/n8n:latest
     restart: unless-stopped
     command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      - NODE_OPTIONS=--max-old-space-size=768
       # Database
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -203,7 +262,7 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
       - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
       - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
-      - DB_POSTGRESDB_POOL_SIZE=10
+      - DB_POSTGRESDB_POOL_SIZE=5
       # Core
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
@@ -211,7 +270,6 @@ services:
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
       # Task Runners - External Mode
-      - N8N_RUNNERS_ENABLED=true
       - N8N_RUNNERS_MODE=external
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
@@ -220,12 +278,13 @@ services:
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
       - QUEUE_WORKER_LOCK_DURATION=60000
       - QUEUE_WORKER_STALLED_INTERVAL=30000
       # Worker Config
-      - EXECUTIONS_CONCURRENCY=10
+      - EXECUTIONS_CONCURRENCY=5
       # Cache (shared across instances via Redis)
       - N8N_CACHE_BACKEND=redis
       # Graceful Shutdown
@@ -241,15 +300,22 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
 
   # ===========================================
   # n8n Worker 2
@@ -258,7 +324,14 @@ services:
     image: ghcr.io/moshehbenavraham/n8n:latest
     restart: unless-stopped
     command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      - NODE_OPTIONS=--max-old-space-size=768
       # Database
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -266,7 +339,7 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
       - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
       - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
-      - DB_POSTGRESDB_POOL_SIZE=10
+      - DB_POSTGRESDB_POOL_SIZE=5
       # Core
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
@@ -274,7 +347,6 @@ services:
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
       # Task Runners - External Mode
-      - N8N_RUNNERS_ENABLED=true
       - N8N_RUNNERS_MODE=external
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
@@ -283,12 +355,13 @@ services:
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
       - QUEUE_WORKER_LOCK_DURATION=60000
       - QUEUE_WORKER_STALLED_INTERVAL=30000
       # Worker Config
-      - EXECUTIONS_CONCURRENCY=10
+      - EXECUTIONS_CONCURRENCY=5
       # Cache (shared across instances via Redis)
       - N8N_CACHE_BACKEND=redis
       # Graceful Shutdown
@@ -304,15 +377,22 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
 
   # ===========================================
   # n8n Worker 3
@@ -321,7 +401,14 @@ services:
     image: ghcr.io/moshehbenavraham/n8n:latest
     restart: unless-stopped
     command: worker
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
+      # Node.js memory - must be set explicitly or V8 defaults to ~512MB
+      - NODE_OPTIONS=--max-old-space-size=768
       # Database
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -329,7 +416,7 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
       - DB_POSTGRESDB_USER=${SERVICE_USER_POSTGRES}
       - DB_POSTGRESDB_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
-      - DB_POSTGRESDB_POOL_SIZE=10
+      - DB_POSTGRESDB_POOL_SIZE=5
       # Core
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=America/New_York
@@ -337,7 +424,6 @@ services:
       # Custom Image Fix
       - N8N_RELEASE_TYPE=stable
       # Task Runners - External Mode
-      - N8N_RUNNERS_ENABLED=true
       - N8N_RUNNERS_MODE=external
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
@@ -346,12 +432,13 @@ services:
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=60000
       - QUEUE_WORKER_LOCK_DURATION=60000
       - QUEUE_WORKER_STALLED_INTERVAL=30000
       # Worker Config
-      - EXECUTIONS_CONCURRENCY=10
+      - EXECUTIONS_CONCURRENCY=5
       # Cache (shared across instances via Redis)
       - N8N_CACHE_BACKEND=redis
       # Graceful Shutdown
@@ -367,21 +454,28 @@ services:
       n8n:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
 
   # ===========================================
   # Runner Config Init (writes config on startup)
   # ===========================================
   runner-init:
-    image: alpine:latest
+    image: alpine:3.21
     restart: "no"
     command: |
       sh -c 'cat > /config/n8n-task-runners.json << "EOF"
@@ -428,9 +522,13 @@ services:
   # ===========================================
   runner-worker-1:
     image: n8nio/runners:latest
-    user: "0:0"
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-1:5679
@@ -451,19 +549,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
 
   # ===========================================
   # Task Runner for Worker 2
   # ===========================================
   runner-worker-2:
     image: n8nio/runners:latest
-    user: "0:0"
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-2:5679
@@ -484,19 +593,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
 
   # ===========================================
   # Task Runner for Worker 3
   # ===========================================
   runner-worker-3:
     image: n8nio/runners:latest
-    user: "0:0"
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c", "cp -f /runner-config/n8n-task-runners.json /etc/n8n-task-runners.json && exec tini -- /usr/local/bin/task-runner-launcher javascript python"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-3:5679
@@ -517,10 +637,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
 
 volumes:
   postgres-data:

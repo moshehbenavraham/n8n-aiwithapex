@@ -54,6 +54,18 @@ endpoints:
       url: http://n8n:5678
     traffic_policy:
       on_http_request:
+        # Rule 0: Rate limit webhook requests to prevent flooding/DoS
+        - name: "Rate limit webhook requests"
+          expressions:
+            - "req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/')"
+          actions:
+            - type: rate-limit
+              config:
+                name: webhook-rate-limit
+                algorithm: sliding_window
+                capacity: 120
+                rate: 1m
+
         # Rule 1: Require Google OAuth for all non-webhook paths
         - name: "Require Google OAuth for UI access"
           expressions:
