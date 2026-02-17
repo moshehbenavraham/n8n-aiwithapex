@@ -9,7 +9,7 @@
 #   # Add the line below (without the leading # comment)
 #
 # To enable:
-#   crontab /home/aiwithapex/n8n/config/cron/worker-autoscale.cron
+#   crontab /home/aiwithapex/projects/n8n-launchpad/config/cron/worker-autoscale.cron
 #
 # To verify:
 #   crontab -l
@@ -24,4 +24,4 @@
 # =============================================================================
 
 # Run worker auto-scaling every minute
-* * * * * /home/aiwithapex/n8n/scripts/worker-autoscale.sh >> /tmp/worker-autoscale-cron.log 2>&1
+* * * * * /home/aiwithapex/projects/n8n-launchpad/scripts/worker-autoscale.sh >> /tmp/worker-autoscale-cron.log 2>&1

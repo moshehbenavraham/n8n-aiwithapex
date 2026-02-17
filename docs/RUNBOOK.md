@@ -378,7 +378,7 @@ Add to your morning checks:
 
 | Resource | Path |
 |----------|------|
-| Project root | `/home/aiwithapex/n8n` |
+| Project root | `/home/aiwithapex/projects/n8n-launchpad` |
 | Docker Compose | `docker-compose.yml` |
 | Environment | `.env` |
 | Scripts | `scripts/` |

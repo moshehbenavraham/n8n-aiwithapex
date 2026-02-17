@@ -27,7 +27,7 @@ The encryption key is essential for credential migration. Without it, all encryp
 
 ```bash
 # Extract from WSL2 .env file
-grep N8N_ENCRYPTION_KEY /home/aiwithapex/n8n/.env
+grep N8N_ENCRYPTION_KEY /home/aiwithapex/projects/n8n-launchpad/.env
 
 # Store securely (do NOT commit to git)
 # You will need this when configuring Coolify environment variables
@@ -118,7 +118,7 @@ Best for: Clean migration of workflows only
 ### Step 1: Prepare WSL2
 
 ```bash
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 
 # Stop all containers except PostgreSQL
 docker compose stop n8n n8n-worker n8n-ngrok
@@ -216,7 +216,7 @@ Once Coolify is verified working:
 
 ```bash
 # On WSL2
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 
 # Final backup (keep for archive)
 ./scripts/backup-all.sh
@@ -239,7 +239,7 @@ If migration fails, rollback to WSL2:
 
 ```bash
 # On WSL2 - restart services
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 docker compose up -d
 
 # Verify

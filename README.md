@@ -1,6 +1,6 @@
 # n8n
 
-**Version 1.1.0**
+**Version 1.1.1**
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 

@@ -19,7 +19,7 @@
 
 ```bash
 # Navigate to fork
-cd /home/aiwithapex/projects/n8n
+cd /home/aiwithapex/projects/n8n-obsidian-forge
 
 # Check status
 git status
@@ -33,7 +33,7 @@ git push origin master --force-with-lease
 
 ### Image Toggle (Deployment Repo)
 
-The deployment repo (`/home/aiwithapex/n8n/`) is configured to switch images via `.env`:
+The deployment repo (`/home/aiwithapex/projects/n8n-launchpad/`) is configured to switch images via `.env`:
 
 ```bash
 # Official image (current)
@@ -219,7 +219,7 @@ corepack prepare --activate
 
 ```bash
 # Our fork is at:
-cd /home/aiwithapex/projects/n8n
+cd /home/aiwithapex/projects/n8n-obsidian-forge
 
 # Remotes already configured:
 # origin   -> github.com/moshehbenavraham/n8n (our fork)
@@ -247,7 +247,7 @@ pnpm start  # http://localhost:5678
 ### Customizations Branch
 
 ```bash
-cd /home/aiwithapex/projects/n8n
+cd /home/aiwithapex/projects/n8n-obsidian-forge
 git checkout -b customizations
 
 # Make changes, then:
@@ -412,7 +412,7 @@ jobs:
 
 ### Phase 1: Setup
 - [x] Fork repository (`github.com/moshehbenavraham/n8n`)
-- [x] Clone and add upstream remote (`/home/aiwithapex/projects/n8n/`)
+- [x] Clone and add upstream remote (`/home/aiwithapex/projects/n8n-obsidian-forge`)
 - [x] Configure deployment repo image toggle (`.env` N8N_IMAGE variable)
 - [ ] `pnpm install && pnpm build && pnpm start` (verify build works)
 

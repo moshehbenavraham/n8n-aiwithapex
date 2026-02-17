@@ -355,7 +355,7 @@ Since workers handle all executions with `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=t
 ## Step 1.4: Deploy Locally
 
 ```bash
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 
 docker compose down
 docker compose pull

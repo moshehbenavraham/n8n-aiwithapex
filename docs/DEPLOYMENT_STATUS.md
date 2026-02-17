@@ -135,7 +135,7 @@ This section documents the state of the WSL2 local deployment completed in Phase
 | Platform | WSL2 (Linux 6.6.87.2-microsoft-standard-WSL2) |
 | Docker | v29.1.3 |
 | Docker Compose | v5.0.0 |
-| Project Directory | /home/aiwithapex/n8n |
+| Project Directory | /home/aiwithapex/projects/n8n-launchpad |
 
 ---
 

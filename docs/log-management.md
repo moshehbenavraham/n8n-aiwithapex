@@ -188,7 +188,7 @@ You can schedule log cleanup via cron:
 crontab -e
 
 # Add weekly log size check (every Sunday at 3 AM)
-0 3 * * 0 /home/aiwithapex/n8n/scripts/cleanup-logs.sh >> /home/aiwithapex/n8n/logs/cleanup-logs.log 2>&1
+0 3 * * 0 /home/aiwithapex/projects/n8n-launchpad/scripts/cleanup-logs.sh >> /home/aiwithapex/projects/n8n-launchpad/logs/cleanup-logs.log 2>&1
 ```
 
 **Note**: The cleanup script defaults to dry-run mode, so the cron job will only report sizes. For automatic truncation, you would need sudo access in cron (not recommended for security reasons).

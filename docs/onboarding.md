@@ -45,7 +45,7 @@ nproc                   # Should show 4
 ## Start Services
 
 ```bash
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 
 # Start stack
 docker compose up -d

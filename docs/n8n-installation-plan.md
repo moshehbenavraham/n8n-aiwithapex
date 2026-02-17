@@ -111,7 +111,7 @@
 
 ```bash
 # CORRECT - Files in Linux filesystem (fast)
-/home/aiwithapex/n8n/
+/home/aiwithapex/projects/n8n-launchpad/
 
 # INCORRECT - Files in Windows filesystem (slow, up to 85% performance loss)
 /mnt/c/Users/username/n8n/
@@ -192,7 +192,7 @@ Log out and back in for group changes to take effect.
 ### Step 1: Create Project Structure
 
 ```bash
-cd /home/aiwithapex/n8n
+cd /home/aiwithapex/projects/n8n-launchpad
 
 # Create directory structure
 mkdir -p {config,data,backups,scripts}
@@ -620,7 +620,7 @@ cat > scripts/backup.sh << 'EOF'
 #!/bin/bash
 set -e
 
-BACKUP_DIR="/home/aiwithapex/n8n/backups"
+BACKUP_DIR="/home/aiwithapex/projects/n8n-launchpad/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 echo "Starting n8n backup..."
@@ -632,7 +632,7 @@ docker exec n8n-postgres pg_dump -U n8n n8n | gzip > "$BACKUP_DIR/postgres_$TIME
 docker run --rm -v n8n_n8n_storage:/data -v "$BACKUP_DIR":/backup alpine tar czf /backup/n8n_data_$TIMESTAMP.tar.gz /data
 
 # Backup environment file
-cp /home/aiwithapex/n8n/.env "$BACKUP_DIR/env_$TIMESTAMP.backup"
+cp /home/aiwithapex/projects/n8n-launchpad/.env "$BACKUP_DIR/env_$TIMESTAMP.backup"
 
 # Keep only last 7 days of backups
 find "$BACKUP_DIR" -name "*.gz" -mtime +7 -delete
@@ -648,7 +648,7 @@ chmod +x scripts/backup.sh
 
 ```bash
 # Add to crontab
-(crontab -l 2>/dev/null; echo "0 2 * * * /home/aiwithapex/n8n/scripts/backup.sh >> /home/aiwithapex/n8n/backups/backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * /home/aiwithapex/projects/n8n-launchpad/scripts/backup.sh >> /home/aiwithapex/projects/n8n-launchpad/backups/backup.log 2>&1") | crontab -
 ```
 
 ---
