@@ -64,7 +64,9 @@ endpoints:
                 name: webhook-rate-limit
                 algorithm: sliding_window
                 capacity: 120
-                rate: 1m
+                rate: "60s"
+                bucket_key:
+                  - conn.client_ip
 
         # Rule 1: Require Google OAuth for all non-webhook paths
         - name: "Require Google OAuth for UI access"
