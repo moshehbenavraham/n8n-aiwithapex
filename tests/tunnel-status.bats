@@ -11,7 +11,7 @@ setup() {
 	chmod +x "$TEST_SCRIPTS_DIR/tunnel-status.sh"
 
 	# Add NGROK_INSPECTOR_PORT to mock .env
-	echo "NGROK_INSPECTOR_PORT=4040" >>"$TEST_PROJECT_DIR/.env"
+	echo "NGROK_INSPECTOR_PORT=4043" >>"$TEST_PROJECT_DIR/.env"
 }
 
 teardown() {
@@ -80,10 +80,10 @@ teardown() {
 # Configuration Tests
 # -----------------------------------------------------------------------------
 
-@test "tunnel-status: has default inspector port 4040" {
+@test "tunnel-status: has default inspector port 4043" {
 	source_script_functions "tunnel-status.sh"
-	# NGROK_API_URL should contain port 4040 (from env or default)
-	[[ "$NGROK_API_URL" == *"4040"* ]] || [[ "$NGROK_API_URL" == *"localhost"* ]]
+	# NGROK_API_URL should contain port 4043 (from env or default)
+	[[ "$NGROK_API_URL" == *"4043"* ]] || [[ "$NGROK_API_URL" == *"localhost"* ]]
 }
 
 @test "tunnel-status: has reasonable API timeout" {

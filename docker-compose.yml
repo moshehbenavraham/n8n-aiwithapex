@@ -646,5 +646,11 @@ networks:
 
 volumes:
   postgres_data:
+    external: true
+    name: n8n_postgres_data
   redis_data:
+    external: true
+    name: n8n_redis_data
   n8n_data:
+    external: true
+    name: n8n_n8n_data

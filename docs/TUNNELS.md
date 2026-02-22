@@ -25,7 +25,7 @@ The configuration uses a **multi-service architecture** that supports multiple e
 |  |                                                               | |
 |  |  +-----------+    +----------+    +----------+    +---------+ | |
 |  |  |  ngrok    |--->|  n8n     |    | postgres |    |  redis  | | |
-|  |  |  :4040    |    |  :5678   |    |          |    |  :6386  | | |
+|  |  |  :4043    |    |  :5678   |    |          |    |  :6386  | | |
 |  |  +-----------+    +----------+    +----------+    +---------+ | |
 |  |                        |                                      | |
 |  |                  +------------+                               | |
@@ -44,7 +44,7 @@ The configuration uses a **multi-service architecture** that supports multiple e
 |----------|-------------|---------|
 | `NGROK_AUTHTOKEN` | ngrok authentication token | `your-authtoken` |
 | `NGROK_DOMAIN` | Custom ngrok domain | `your.ngrok.domain` |
-| `NGROK_INSPECTOR_PORT` | Web inspector port | `4040` |
+| `NGROK_INSPECTOR_PORT` | Web inspector port | `4043` |
 | `WEBHOOK_URL` | n8n webhook base URL | `https://your.ngrok.domain/` |
 | `N8N_HOST` | n8n host for URLs | `your.ngrok.domain` |
 | `N8N_PROTOCOL` | Protocol (http/https) | `https` |
@@ -175,7 +175,7 @@ The health-check.sh script includes ngrok tunnel verification:
 ### Web Inspector
 
 Access the ngrok web inspector for request debugging:
-- URL: http://localhost:4040
+- URL: http://localhost:4043
 - Shows all requests through the tunnel
 - Includes request/response bodies and headers
 
@@ -222,9 +222,9 @@ Access the ngrok web inspector for request debugging:
 **Checks**:
 1. Check ngrok API:
    ```bash
-   curl -s http://localhost:4040/api/tunnels | jq
+   curl -s http://localhost:4043/api/tunnels | jq
    ```
-2. Verify port 4040 is not in use by another process
+2. Verify port 4043 is not in use by another process
 
 ### API Unreachable
 
@@ -257,7 +257,7 @@ docker logs n8n-ngrok
 ./scripts/tunnel-status.sh
 
 # View live requests (requires jq)
-curl -s http://localhost:4040/api/requests/http | jq '.requests[:5]'
+curl -s http://localhost:4043/api/requests/http | jq '.requests[:5]'
 ```
 
 ## Multi-Service Architecture
@@ -315,7 +315,7 @@ A template for Ollama LLM service is included but commented out. To enable:
 ## Security Notes
 
 - The ngrok authtoken should never be committed to version control
-- The web inspector (port 4040) is only bound locally
+- The web inspector (port 4043) is only bound locally
 - SSL termination happens at the ngrok edge
 - Internal Docker traffic remains HTTP (n8n:5678)
 

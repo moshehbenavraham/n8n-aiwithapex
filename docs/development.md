@@ -55,7 +55,7 @@ docker exec n8n-redis redis-cli -p 6386 ping
 ./scripts/view-logs.sh -s ngrok
 
 # Open ngrok inspector
-open http://localhost:4040
+open http://localhost:4043
 ```
 
 ## Scaling Workers

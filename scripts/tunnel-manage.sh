@@ -26,7 +26,7 @@ fi
 # ngrok configuration
 NGROK_CONTAINER="n8n-ngrok"
 NGROK_SERVICE="ngrok"
-NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4040}/api"
+NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4043}/api"
 API_TIMEOUT=5
 STARTUP_WAIT=10
 
@@ -82,7 +82,7 @@ Examples:
 
 Notes:
   - Uses docker compose to manage the ngrok service
-  - Queries ngrok API at localhost:4040 for status info
+  - Queries ngrok API at localhost:4043 for status info
   - Logs operations to logs/tunnel-manage.log
 EOF
 }

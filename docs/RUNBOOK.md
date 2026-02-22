@@ -331,7 +331,7 @@ The ngrok tunnel provides external access for webhooks and authenticated UI acce
 ### Web Inspector
 
 Access the ngrok web inspector for request debugging:
-- URL: http://localhost:4040
+- URL: http://localhost:4043
 - Shows all requests through the tunnel
 - Useful for debugging webhook deliveries
 
@@ -342,7 +342,7 @@ Access the ngrok web inspector for request debugging:
 | Check status | `./scripts/tunnel-manage.sh status` |
 | Restart tunnel | `./scripts/tunnel-manage.sh restart` |
 | View logs | `./scripts/view-logs.sh -s ngrok` |
-| Debug requests | Open http://localhost:4040 |
+| Debug requests | Open http://localhost:4043 |
 
 ### Tunnel Health in Morning Checklist
 

@@ -23,7 +23,7 @@ if [[ -f "${PROJECT_DIR}/.env" ]]; then
 fi
 
 # ngrok API configuration
-NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4040}/api"
+NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4043}/api"
 API_TIMEOUT=5
 
 # -----------------------------------------------------------------------------

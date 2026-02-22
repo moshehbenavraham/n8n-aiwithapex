@@ -34,7 +34,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 +-------------+   http://localhost:5678   +-------------+
 |   ngrok     |----------+                |             |
 | (n8n-ngrok) |          |                |             |
-|  Port: 4040 |          v                |             |
+|  Port: 4043 |          v                |             |
 +-------------+     +---------+           |             |
                     |  n8n    |---------->|   Redis     |
 +------------------+| (main)  |           | (n8n-redis) |
@@ -124,7 +124,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 - **Purpose**: Secure tunnel for external webhook access with OAuth
 - **Tech**: ngrok Docker image (v3 config)
 - **Location**: Container `n8n-ngrok`
-- **Port**: 4040 (web inspector)
+- **Port**: 4043 (web inspector)
 - **External URL**: https://your.ngrok.domain
 
 ## Tech Stack Rationale
@@ -173,7 +173,7 @@ n8n workflow automation platform running in queue mode with distributed executio
 - **Internal DNS**: Services communicate via container names
 - **External (local)**: n8n-main exposes port 5678 to host
 - **External (internet)**: ngrok exposes n8n via https://your.ngrok.domain
-- **ngrok inspector**: Port 4040 exposed to host for debugging
+- **ngrok inspector**: Port 4043 exposed to host for debugging
 
 ## Volumes
 

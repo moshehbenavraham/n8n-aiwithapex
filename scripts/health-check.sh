@@ -26,7 +26,7 @@ EXPECTED_WORKERS=5
 REQUIRED_CONTAINERS=("n8n-postgres" "n8n-redis" "n8n-main" "n8n-ngrok")
 
 # ngrok API configuration
-NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4040}/api"
+NGROK_API_URL="http://localhost:${NGROK_INSPECTOR_PORT:-4043}/api"
 NGROK_TIMEOUT=5
 
 # -----------------------------------------------------------------------------

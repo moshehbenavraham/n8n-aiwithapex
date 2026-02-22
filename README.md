@@ -1,6 +1,6 @@
 # n8n
 
-**Version 1.1.1**
+**Version 1.1.2**
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 
@@ -73,7 +73,7 @@ See [Deploy to Coolify](docs/deploy-to-coolify.md) for cloud deployment.
 |---------|-----------|------|-------------|
 | n8n UI | n8n-main | 5678 | Main workflow editor and API |
 | n8n (external) | n8n-ngrok | 443 | Secure tunnel via ngrok |
-| ngrok Inspector | n8n-ngrok | 4040 | Tunnel monitoring dashboard |
+| ngrok Inspector | n8n-ngrok | 4043 | Tunnel monitoring dashboard |
 | PostgreSQL | n8n-postgres | 5432 (internal) | Persistent database storage |
 | Redis | n8n-redis | 6386 (internal) | Queue broker for workers |
 | n8n Worker 1 | n8n-worker-1 | - | Queue processor |

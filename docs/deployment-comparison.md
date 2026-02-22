@@ -74,7 +74,7 @@ Internet → Traefik (Coolify-managed) → Docker → n8n Stack
 | OAuth Protection | ngrok Edge traffic policy | Traefik middleware or n8n auth |
 | Webhook URL | https://your.ngrok.domain/webhook/* | https://n8n.aiwithapex.com/webhook/* |
 | UI Access | http://localhost:5678 or via ngrok | https://n8n.aiwithapex.com |
-| Inspector/Debug | http://localhost:4040 (ngrok) | Coolify dashboard |
+| Inspector/Debug | http://localhost:4043 (ngrok) | Coolify dashboard |
 
 ### Service Configuration
 

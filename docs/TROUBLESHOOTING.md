@@ -371,7 +371,7 @@ grep NGROK_AUTHTOKEN .env
 ./scripts/tunnel-manage.sh status
 
 # Check ngrok web inspector for incoming requests
-# Open http://localhost:4040 in browser
+# Open http://localhost:4043 in browser
 
 # Check n8n is receiving requests
 ./scripts/view-logs.sh -s n8n -n 100 | grep webhook
@@ -410,16 +410,16 @@ cat config/ngrok.yml | grep endsWith
 docker ps | grep ngrok
 
 # Check port binding
-docker port n8n-ngrok 4040
+docker port n8n-ngrok 4043
 
 # Test API directly
-curl -s http://localhost:4040/api/tunnels
+curl -s http://localhost:4043/api/tunnels
 ```
 
 **Fixes**:
-- Port conflict: Check if port 4040 is in use by another process
+- Port conflict: Check if port 4043 is in use by another process
 - Container issue: `./scripts/tunnel-manage.sh restart`
-- Firewall: Ensure localhost:4040 is not blocked
+- Firewall: Ensure localhost:4043 is not blocked
 
 ### 13. Tunnel Disconnecting Frequently
 
@@ -459,7 +459,7 @@ Tunnel not working?
 |   |   $ ./scripts/tunnel-manage.sh restart
 |   |
 |   +-> Yes: Check tunnel connection
-|       $ curl http://localhost:4040/api/tunnels
+|       $ curl http://localhost:4043/api/tunnels
 |
 +-> Tunnel connected?
 |   |

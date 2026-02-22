@@ -167,8 +167,8 @@ EOF
 
 @test "tunnel-manage: uses correct default API port" {
 	source_script_functions "tunnel-manage.sh"
-	# NGROK_INSPECTOR_PORT is not set, so should use default 4040
-	[[ "$NGROK_API_URL" == *"4040"* ]]
+	# NGROK_INSPECTOR_PORT is not set, so should use default 4043
+	[[ "$NGROK_API_URL" == *"4043"* ]]
 }
 
 @test "tunnel-manage: API timeout is reasonable" {

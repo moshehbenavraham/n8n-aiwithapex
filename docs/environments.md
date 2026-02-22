@@ -23,7 +23,7 @@ See [Deployment Comparison](deployment-comparison.md) for detailed differences.
 |-------------|-----|---------|
 | Local (WSL2) | http://localhost:5678 | Development and automation |
 | External (ngrok) | https://your.ngrok.domain | Webhooks and remote access |
-| ngrok Inspector | http://localhost:4040 | Tunnel debugging |
+| ngrok Inspector | http://localhost:4043 | Tunnel debugging |
 
 ## Configuration
 
@@ -68,7 +68,7 @@ All configuration is managed through the `.env` file in the project root.
 |----------|-------------|
 | `NGROK_AUTHTOKEN` | ngrok authentication token |
 | `NGROK_DOMAIN` | Custom domain (your.ngrok.domain) |
-| `NGROK_INSPECTOR_PORT` | Web inspector port (4040) |
+| `NGROK_INSPECTOR_PORT` | Web inspector port (4043) |
 | `WEBHOOK_URL` | External webhook base URL |
 | `N8N_HOST` | Hostname for URLs (your.ngrok.domain) |
 | `N8N_PROTOCOL` | Protocol (https for ngrok) |
@@ -98,7 +98,7 @@ Configured in Windows `.wslconfig`:
 | Service | Internal Port | External Port | Notes |
 |---------|---------------|---------------|-------|
 | n8n | 5678 | 5678 | Local access |
-| ngrok Inspector | 4040 | 4040 | Debug UI |
+| ngrok Inspector | 4040 | 4043 | Debug UI |
 | ngrok Tunnel | - | 443 | Via your.ngrok.domain |
 | PostgreSQL | 5432 | Not exposed | Internal only |
 | Redis | 6386 | Not exposed | Internal only |
