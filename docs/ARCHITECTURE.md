@@ -1,6 +1,6 @@
 # Architecture
 
-> **Custom Fork Optimized**: This infrastructure is designed to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The deployment supports both the official n8n image and the custom fork image via the `N8N_IMAGE` environment variable.
+> **Image**: Both deployments use the official `n8nio/n8n:latest` image by default. A custom fork can optionally be used via the `N8N_IMAGE` environment variable (see [Custom Fork Guide](custom-fork.md)).
 
 ## Deployment Forms
 

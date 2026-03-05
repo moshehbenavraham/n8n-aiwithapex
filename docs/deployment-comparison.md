@@ -2,7 +2,7 @@
 
 This n8n installation supports two deployment forms. This document provides a side-by-side comparison to help you choose the right approach.
 
-> **Custom Fork Optimized**: Both deployment forms are designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The fork enables custom branding and white-labeling while maintaining full compatibility with this deployment infrastructure.
+> **Image**: Both deployment forms use the official `n8nio/n8n:latest` image by default. A custom fork can optionally be used via the `N8N_IMAGE` variable for custom branding and white-labeling. See [Custom Fork Guide](custom-fork.md) for details.
 
 ---
 
@@ -102,7 +102,7 @@ Internet → Traefik (Coolify-managed) → Docker → n8n Stack
 |------|------|---------|
 | Start Services | `docker compose up -d` | Coolify Deploy button |
 | View Logs | `docker compose logs -f` | Coolify Logs tab |
-| Scale Workers | `--scale n8n-worker=5` | Edit compose, redeploy |
+| Scale Workers | `--scale n8n-worker=N` | Edit compose, redeploy |
 | Backup | `./scripts/backup-all.sh` | Coolify backup or API |
 | Monitor | `./scripts/system-status.sh` | Coolify dashboard + /metrics |
 | Upgrade | Edit compose, restart | Edit compose, redeploy |

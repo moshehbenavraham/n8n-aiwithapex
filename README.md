@@ -1,10 +1,12 @@
 # n8n
 
-**Version 1.1.2**
+**Version 1.1.3**
+
+2 Launchpads - Local/Docker and Coolify
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 
-> **Optimized for Custom Fork**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The fork enables custom branding, white-labeling, and enterprise customizations while maintaining upstream compatibility. See [Custom Fork Guide](docs/custom-fork.md) for details.
+> **Custom Fork Support**: This deployment infrastructure can optionally run with a custom n8n fork (see [Custom Fork Guide](docs/custom-fork.md) for details). By default, both local and Coolify deployments use the official `n8nio/n8n:latest` image.
 
 ## Deployment Options
 
@@ -12,8 +14,8 @@ This project supports **two deployment forms**:
 
 | Deployment | Environment | URL | Status |
 |------------|-------------|-----|--------|
-| **WSL2 (Local)** | Ubuntu on Windows | https://your.ngrok.domain | Operational |
-| **Coolify (Cloud)** | Coolify-managed server | https://your.custom.vps.domain | In Development |
+| **WSL2 (Local) or Docker** | Linux Distro / Ubuntu on Windows | https://your.ngrok.domain | Operational |
+| **Coolify (Cloud)** | Coolify-managed server | https://your.custom.vps.domain | Operational |
 
 See [Deployment Comparison](docs/deployment-comparison.md) for detailed differences.
 
@@ -78,10 +80,8 @@ See [Deploy to Coolify](docs/deploy-to-coolify.md) for cloud deployment.
 | Redis | n8n-redis | 6386 (internal) | Queue broker for workers |
 | n8n Worker 1 | n8n-worker-1 | - | Queue processor |
 | n8n Worker 2 | n8n-worker-2 | - | Queue processor |
-| n8n Worker 3 | n8n-worker-3 | - | Queue processor |
 | Task Runner 1 | n8n-runner-worker-1 | - | JavaScript/Python code executor |
 | Task Runner 2 | n8n-runner-worker-2 | - | JavaScript/Python code executor |
-| Task Runner 3 | n8n-runner-worker-3 | - | JavaScript/Python code executor |
 
 ### External Network Integration
 

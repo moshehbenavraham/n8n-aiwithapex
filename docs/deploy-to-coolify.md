@@ -12,8 +12,8 @@
 Internet → Traefik → n8n-main (:5678)
                          │
            ┌─────────────┼─────────────┐
-           ▼             ▼             ▼
-       Worker-1      Worker-2      Worker-3
+           ▼             ▼             │
+       Worker-1      Worker-2         │
            │             │             │
            └─────────────┼─────────────┘
                          │
@@ -26,10 +26,11 @@ Internet → Traefik → n8n-main (:5678)
 |---------|-------|--------|
 | postgres | postgres:16.11-alpine | 1GB |
 | redis | redis:7.4.7-alpine | 384MB |
-| n8n | ghcr.io/moshehbenavraham/n8n:latest | 1GB |
-| n8n-worker-1/2/3 | ghcr.io/moshehbenavraham/n8n:latest | 512MB each |
+| n8n | n8nio/n8n:latest | 1GB |
+| n8n-worker-1/2 | n8nio/n8n:latest | 1.5GB each |
+| runner-worker-1/2 | n8nio/runners:latest | 512MB each |
 
-**Capacity**: 30 parallel executions (3 workers × 10 concurrency)
+**Capacity**: 10 parallel executions (2 workers × 5 concurrency)
 
 ---
 
@@ -37,11 +38,11 @@ Internet → Traefik → n8n-main (:5678)
 
 All complete:
 - [x] Service deployed via Coolify API
-- [x] All 6 containers running and healthy
+- [x] All containers running and healthy
 - [x] Domain configured: https://n8n.aiwithapex.com
 - [x] Health, metrics, signin all verified working
 - [x] Data migrated from old one-click install (137 workflows, 72 credentials, 3,570 executions)
-- [x] Custom image fixes applied (N8N_RELEASE_TYPE, DB host, community nodes)
+- [x] Configuration fixes applied (N8N_RELEASE_TYPE, DB host, community nodes)
 
 ---
 
@@ -155,7 +156,7 @@ Data volumes remain at `/data/coolify/services/g8wow80sgg8oo0csg4sgkws0/` if rol
 
 ## Scaling Workers
 
-Edit `docker-compose.coolify.yml`, add `n8n-worker-4`, etc., then:
+Edit `docker-compose.coolify.yml` to add more workers (e.g., `n8n-worker-3` with matching `runner-worker-3`), then:
 
 ```bash
 COMPOSE_B64=$(cat docker-compose.coolify.yml | base64 -w 0)
@@ -179,7 +180,7 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 | Redis connection | `docker exec redis-<uuid> redis-cli ping` |
 | Workers idle | `docker logs n8n-worker-1-<uuid>` |
 
-### Known Issues & Fixes (Custom Image)
+### Known Issues & Fixes
 
 | Issue | Symptom | Fix |
 |-------|---------|-----|
@@ -220,7 +221,7 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 
 ### Required Variables (set in Coolify)
 - `N8N_ENCRYPTION_KEY` - Set in Coolify env vars (migrated from old instance)
-- `N8N_RELEASE_TYPE` - Set to `stable` (custom image defaults to `custom` which causes errors)
+- `N8N_RELEASE_TYPE` - Set to `stable`
 - `POSTGRES_DB` - Database name (default: n8n)
 - `N8N_LOG_LEVEL` - info, warn, error, debug
 
@@ -229,4 +230,4 @@ curl -X POST "https://coolify.aiwithapex.com/api/v1/services/s0sw00s8swwk4w88kgk
 - Redis: maxmemory=256mb, noeviction, AOF persistence
 - Queue: QUEUE_WORKER_LOCK_DURATION=60000
 - Privacy: Telemetry disabled
-- Workers: Shared volume with main instance, 10 concurrency each
+- Workers: Shared volume with main instance, 5 concurrency each

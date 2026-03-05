@@ -2,7 +2,7 @@
 
 Reference for optimizing the n8n queue mode deployment with workers and runners.
 
-**Current Setup**: n8n 2.33.4 | Queue mode | 3 workers | 3 runners | PostgreSQL | Redis
+**Current Setup**: n8n latest | Queue mode | 2 workers | 2 runners | PostgreSQL | Redis
 
 **Official Docs**: https://docs.n8n.io/hosting/configuration/environment-variables/
 
@@ -126,7 +126,7 @@ QUEUE_WORKER_STALLED_INTERVAL: '30000'        # Check for stalled jobs every 30s
 
 ```yaml
 EXECUTIONS_MODE: queue
-EXECUTIONS_CONCURRENCY: '10'
+EXECUTIONS_CONCURRENCY: '5'
 OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: 'true'  # On main only
 ```
 
@@ -140,10 +140,10 @@ OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: 'true'  # On main only
 ### Recommendations
 
 ```yaml
-# Current EXECUTIONS_CONCURRENCY: 10 is good
-# With 3 workers = 30 concurrent executions max
-# Consider reducing if memory constrained:
-EXECUTIONS_CONCURRENCY: '5'                   # More conservative
+# Current EXECUTIONS_CONCURRENCY: 5 per worker
+# With 2 workers = 10 concurrent executions max
+# Can increase if resources allow:
+EXECUTIONS_CONCURRENCY: '10'                  # Higher throughput
 ```
 
 ---
@@ -193,7 +193,7 @@ N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: '15'
 N8N_RUNNERS_TASK_TIMEOUT: '600'               # 10 minutes
 
 # Current MAX_CONCURRENCY: 5 per runner is conservative and good
-# Total: 3 runners x 5 = 15 concurrent code tasks
+# Total: 2 runners x 5 = 10 concurrent code tasks
 ```
 
 ---
@@ -472,7 +472,7 @@ N8N_AI_ENABLED: 'true'
 |----------|--------|-------|
 | Queue Mode | Good | Properly configured |
 | Redis | Good | Appropriate timeouts |
-| Workers | Good | 10 concurrency per worker |
+| Workers | Good | 5 concurrency per worker (2 workers) |
 | Runners | Good | External mode, proper auth |
 | Database | **Needs Fix** | Pool size too low |
 | Logging | OK | Consider JSON format |

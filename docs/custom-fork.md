@@ -33,15 +33,17 @@ git push origin master --force-with-lease
 
 ### Image Toggle (Deployment Repo)
 
-The deployment repo (`/home/aiwithapex/projects/n8n-launchpad/`) is configured to switch images via `.env`:
+The deployment repo (`/home/aiwithapex/projects/n8n-launchpad/`) uses the official image by default. To switch to the custom fork, set in `.env`:
 
 ```bash
-# Official image (current)
-N8N_IMAGE=n8nio/n8n:2.1.4
+# Official image (default — used by both local and Coolify)
+N8N_IMAGE=n8nio/n8n:latest
 
-# Custom fork (when ready)
+# Custom fork (optional)
 N8N_IMAGE=ghcr.io/moshehbenavraham/n8n:latest
 ```
+
+> **Note**: The Coolify compose (`docker-compose.coolify.yml`) hardcodes `n8nio/n8n:latest` and does not use `N8N_IMAGE`. To use the custom fork on Coolify, edit the image field directly in the compose file.
 
 ---
 

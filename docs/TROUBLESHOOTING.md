@@ -82,7 +82,7 @@ Memory above 80%?
 |
 +-> System-wide high memory?
     Consider reducing worker replicas
-    Edit docker-compose.yml: replicas: 3
+    Edit docker-compose.yml: replicas: 2
 ```
 
 ### Workflows Not Executing

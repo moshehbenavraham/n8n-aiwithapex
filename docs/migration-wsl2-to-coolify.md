@@ -2,7 +2,7 @@
 
 This guide covers migrating from the WSL2 local deployment to the Coolify cloud deployment.
 
-> **Custom Fork Optimized**: Both deployment forms support our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). The migration process works identically for both official and custom fork images.
+> **Image**: Both deployments use the official `n8nio/n8n:latest` image by default. The migration process works identically if using a custom fork image via `N8N_IMAGE`.
 
 ---
 

@@ -4,7 +4,7 @@
 >
 > This plan provides a production-grade n8n installation on local WSL2 Ubuntu using Docker Compose with PostgreSQL, Redis, and worker scaling for maximum performance.
 
-> **Custom Fork Support**: This deployment infrastructure is optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between the official and custom fork images via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](ongoing-roadmap/custom-fork.md) for branding and customization details.
+> **Custom Fork Support**: Uses the official `n8nio/n8n:latest` image by default. A custom fork can optionally be used via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](custom-fork.md) for details.
 
 ---
 
@@ -45,7 +45,7 @@
 │  │         ▼            ▼              ▼                          ││
 │  │  ┌──────────────┐  ┌─────────┐  ┌─────────┐                    ││
 │  │  │   n8n        │  │  n8n    │  │  n8n    │                    ││
-│  │  │   Worker 1   │  │ Worker 2│  │ Worker 3│  (Scalable)       ││
+│  │  │   Worker 1   │  │ Worker 2│  │ Worker N│  (Scalable)       ││
 │  │  └──────────────┘  └─────────┘  └─────────┘                    ││
 │  │                                                                 ││
 │  │  Volumes: db_storage | n8n_storage | redis_storage             ││
@@ -535,15 +535,15 @@ Access n8n at: **http://localhost:5678**
 Scale workers based on workload:
 
 ```bash
-# Scale to 3 workers (recommended for moderate workloads)
-docker compose up -d --scale n8n-worker=3
+# Scale to 2 workers (default)
+docker compose up -d --scale n8n-worker=2
 
 # Scale to 5 workers (for heavy workloads)
 docker compose up -d --scale n8n-worker=5
 ```
 
 **Guidelines:**
-- Start with 2-3 workers
+- Start with 2 workers
 - Each worker should have concurrency of 5-10
 - Monitor memory usage and adjust
 - Small multiple workers > one large worker
@@ -821,7 +821,7 @@ docker compose up -d
 | Start stack | `docker compose up -d` |
 | Stop stack | `docker compose down` |
 | View logs | `docker compose logs -f` |
-| Scale workers | `docker compose up -d --scale n8n-worker=3` |
+| Scale workers | `docker compose up -d --scale n8n-worker=2` |
 | Update n8n | `docker compose pull && docker compose up -d` |
 | Backup | `./scripts/backup.sh` |
 | Health check | `curl http://localhost:5678/healthz` |

@@ -49,19 +49,19 @@ When using queue mode with workers, **each worker runs its own task broker** on 
                                     ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                              Redis Queue                                  │
-└───────────────────────┬───────────────┬───────────────┬───────────────────┘
-                        │               │               │
-           ┌────────────▼──┐   ┌────────▼────────┐   ┌──▼────────────┐
-           │  n8n-worker-1 │   │  n8n-worker-2   │   │  n8n-worker-3 │
-           │ ┌───────────┐ │   │ ┌─────────────┐ │   │ ┌───────────┐ │
-           │ │Broker:5679│ │   │ │ Broker:5679 │ │   │ │Broker:5679│ │
-           │ └─────┬─────┘ │   │ └──────┬──────┘ │   │ └─────┬─────┘ │
-           └───────│───────┘   └────────│────────┘   └───────│───────┘
-                   │ WS                 │ WS                 │ WS
-           ┌───────▼───────┐   ┌────────▼────────┐   ┌───────▼───────┐
-           │runner-worker-1│   │ runner-worker-2 │   │runner-worker-3│
-           │  n8nio/runners│   │  n8nio/runners  │   │  n8nio/runners│
-           └───────────────┘   └─────────────────┘   └───────────────┘
+└──────────────────────────────┬───────────────┬────────────────────────────┘
+                               │               │
+                  ┌────────────▼──┐   ┌────────▼────────┐
+                  │  n8n-worker-1 │   │  n8n-worker-2   │
+                  │ ┌───────────┐ │   │ ┌─────────────┐ │
+                  │ │Broker:5679│ │   │ │ Broker:5679 │ │
+                  │ └─────┬─────┘ │   │ └──────┬──────┘ │
+                  └───────│───────┘   └────────│────────┘
+                          │ WS                 │ WS
+                  ┌───────▼───────┐   ┌────────▼────────┐
+                  │runner-worker-1│   │ runner-worker-2 │
+                  │  n8nio/runners│   │  n8nio/runners  │
+                  └───────────────┘   └─────────────────┘
 ```
 
 ### Why NOT a Single Shared Runner?
@@ -71,7 +71,6 @@ When using queue mode with workers, **each worker runs its own task broker** on 
 n8n-main (broker:5679) ◄── single task-runner connects here
 n8n-worker-1 (broker:5679) ◄── NO RUNNER - Code nodes FAIL!
 n8n-worker-2 (broker:5679) ◄── NO RUNNER - Code nodes FAIL!
-n8n-worker-3 (broker:5679) ◄── NO RUNNER - Code nodes FAIL!
 ```
 
 With `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true`:
@@ -103,10 +102,10 @@ With `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true`:
 
 | Setting | Local (WSL2) | Production (Coolify) |
 |---------|--------------|----------------------|
-| Workers | 3 replicas (single service) | 3 named services |
-| Runners needed | Complex (see below) | 3 (one per worker) |
+| Workers | 2 replicas (single service) | 2 named services |
+| Runners needed | Complex (see below) | 2 (one per worker) |
 | Main instance broker | Not needed | Not needed |
-| n8n Image | `n8nio/n8n:2.1.4` | `ghcr.io/moshehbenavraham/n8n:latest` |
+| n8n Image | `n8nio/n8n:latest` | `n8nio/n8n:latest` |
 
 ---
 
@@ -191,7 +190,7 @@ Replace the replicated worker service with named workers:
   # n8n Worker 1
   # ===========================================
   n8n-worker-1:
-    image: ${N8N_IMAGE:-n8nio/n8n:2.1.4}
+    image: ${N8N_IMAGE:-n8nio/n8n:latest}
     container_name: n8n-worker-1
     restart: unless-stopped
     command: worker
@@ -240,12 +239,12 @@ Replace the replicated worker service with named workers:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1.5G
     networks:
       - n8n-network
       - ollama-network
 
-  # Repeat for n8n-worker-2 and n8n-worker-3 (copy above, change names)
+  # Repeat for n8n-worker-2 (copy above, change name)
 
   # ===========================================
   # Task Runner for Worker 1
@@ -307,35 +306,6 @@ Replace the replicated worker service with named workers:
       - n8n-network
       - ollama-network
 
-  # ===========================================
-  # Task Runner for Worker 3
-  # ===========================================
-  runner-worker-3:
-    image: n8nio/runners:latest
-    container_name: n8n-runner-worker-3
-    restart: unless-stopped
-    environment:
-      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
-      N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-3:5679
-      N8N_RUNNERS_MAX_CONCURRENCY: ${N8N_RUNNERS_MAX_CONCURRENCY:-5}
-      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: 15
-      N8N_RUNNERS_LAUNCHER_LOG_LEVEL: ${N8N_LOG_LEVEL:-info}
-    depends_on:
-      n8n-worker-3:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5680/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    networks:
-      - n8n-network
-      - ollama-network
 ```
 
 ### Update n8n Main Service
@@ -408,9 +378,9 @@ N8N_RUNNERS_AUTH_TOKEN=<paste-your-generated-token>
       - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
 ```
 
-### Update ALL Three Worker Services
+### Update Both Worker Services
 
-Add to **n8n-worker-1**, **n8n-worker-2**, AND **n8n-worker-3**:
+Add to **n8n-worker-1** AND **n8n-worker-2**:
 
 ```yaml
       # Task Runners - Workers run brokers
@@ -422,9 +392,9 @@ Add to **n8n-worker-1**, **n8n-worker-2**, AND **n8n-worker-3**:
       - N8N_RUNNERS_TASK_TIMEOUT=600
 ```
 
-### Add THREE Task Runner Services (One Per Worker)
+### Add Two Task Runner Services (One Per Worker)
 
-Add these after `n8n-worker-3`:
+Add these after `n8n-worker-2`:
 
 ```yaml
   # ===========================================
@@ -481,32 +451,6 @@ Add these after `n8n-worker-3`:
           memory: 512M
           cpus: '0.5'
 
-  # ===========================================
-  # Task Runner for Worker 3
-  # ===========================================
-  runner-worker-3:
-    image: n8nio/runners:latest
-    restart: unless-stopped
-    environment:
-      - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
-      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker-3:5679
-      - N8N_RUNNERS_MAX_CONCURRENCY=10
-      - N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT=15
-      - N8N_RUNNERS_LAUNCHER_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
-    depends_on:
-      n8n-worker-3:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5680/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
 ```
 
 ## Step 2.4: Deploy to Production
@@ -522,13 +466,12 @@ git push origin main
 ```bash
 ssh user@your-hostinger-vps
 
-# Should see 6 runner-related containers (3 workers + 3 runners)
+# Should see 4 runner-related containers (2 workers + 2 runners)
 docker ps | grep -E "worker|runner"
 
 # Check each runner is connected to its worker
 docker logs <runner-worker-1-container-id> 2>&1 | grep -i "connect"
 docker logs <runner-worker-2-container-id> 2>&1 | grep -i "connect"
-docker logs <runner-worker-3-container-id> 2>&1 | grep -i "connect"
 ```
 
 ---
@@ -571,9 +514,9 @@ docker logs <runner-worker-3-container-id> 2>&1 | grep -i "connect"
 | n8n main | 1G | 1G (no change) |
 | postgres | 1G | 1G |
 | redis | 384M | 384M |
-| workers (3x) | 512M each | 512M each |
-| **runners (3x)** | — | **+512M each = 1.5G** |
-| **Total** | ~4.4G | **~5.9G** |
+| workers (2x) | 1.5G each | 1.5G each |
+| **runners (2x)** | — | **+512M each = 1G** |
+| **Total** | ~5.4G | **~6.4G** |
 
 ---
 
@@ -584,10 +527,10 @@ docker logs <runner-worker-3-container-id> 2>&1 | grep -i "connect"
 - [ ] Auth token generated and added to Coolify UI
 - [ ] Main instance does NOT have `N8N_RUNNERS_ENABLED=true`
 - [ ] Main instance has `OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true`
-- [ ] Each worker (1, 2, 3) has runner env vars with `N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0`
-- [ ] Three runner services added (runner-worker-1, -2, -3)
+- [ ] Each worker (1, 2) has runner env vars with `N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0`
+- [ ] Two runner services added (runner-worker-1, -2)
 - [ ] Each runner connects to its worker: `http://n8n-worker-X:5679`
-- [ ] All 6 containers healthy (3 workers + 3 runners)
+- [ ] All 4 containers healthy (2 workers + 2 runners)
 - [ ] Code node execution works
 
 ---
@@ -608,8 +551,6 @@ runner-worker-1:
   N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-1:5679
 runner-worker-2:
   N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-2:5679
-runner-worker-3:
-  N8N_RUNNERS_TASK_BROKER_URI: http://n8n-worker-3:5679
 ```
 
 ## Mistake 2: Enabling Runners on Main

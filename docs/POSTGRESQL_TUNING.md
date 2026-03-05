@@ -57,7 +57,7 @@ Allocation strategy:
 - PostgreSQL shared_buffers: 512MB
 - PostgreSQL work_mem: 32MB per operation
 - n8n main: ~256MB
-- n8n workers (5x): ~512MB each = 2.5GB
+- n8n workers (2x): ~1.5GB each = 3GB
 - Redis: ~100MB
 - WSL2 overhead: ~1GB
 - OS cache: remaining

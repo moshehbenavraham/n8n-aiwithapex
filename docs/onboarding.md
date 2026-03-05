@@ -2,7 +2,7 @@
 
 Zero-to-running checklist for this n8n installation.
 
-> **Custom Fork Optimized**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between official and custom fork images via the `N8N_IMAGE` variable in `.env`.
+> **Image**: Uses the official `n8nio/n8n:latest` image by default. A custom fork can optionally be used via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](custom-fork.md) for details.
 
 ---
 

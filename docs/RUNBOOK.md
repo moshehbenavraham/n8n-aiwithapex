@@ -213,18 +213,18 @@ Perform these tasks monthly (suggested: first Monday):
 To adjust worker count temporarily:
 
 ```bash
+# Scale to 2 workers (default)
+docker compose up -d --scale n8n-worker=2
+
 # Scale to 3 workers
 docker compose up -d --scale n8n-worker=3
-
-# Scale back to 5 workers (default)
-docker compose up -d --scale n8n-worker=5
 ```
 
 For permanent change, edit docker-compose.yml:
 ```yaml
 n8n-worker:
   deploy:
-    replicas: 5  # Change this number
+    replicas: 2  # Change this number
 ```
 
 ### Viewing Logs

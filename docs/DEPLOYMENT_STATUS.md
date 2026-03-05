@@ -2,7 +2,7 @@
 
 **Last Updated**: 2025-12-28
 
-> **Custom Fork Optimized**: This deployment infrastructure is designed and optimized to run with our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between official and custom fork images via the `N8N_IMAGE` environment variable.
+> **Image**: Both local and Coolify deployments use the official `n8nio/n8n:latest` image. A custom fork can optionally be used via the `N8N_IMAGE` environment variable (see [Custom Fork Guide](custom-fork.md)).
 
 ---
 
@@ -162,7 +162,7 @@ docker compose ps
 docker compose restart n8n
 
 # Scale workers (Phase 01)
-docker compose up -d --scale n8n-worker=5
+docker compose up -d --scale n8n-worker=2
 ```
 
 ---
@@ -206,7 +206,7 @@ The Coolify deployment is currently in planning phase. A one-click n8n service e
 | Execution Mode | Single instance | Queue mode + workers |
 | Database | PostgreSQL (basic) | PostgreSQL (tuned) |
 | Redis | None | Redis 7.4.7 |
-| Workers | None | 3 workers |
+| Workers | None | 2 workers |
 | Domain | n8n.aiwithapex.com | n8n.aiwithapex.com |
 
 ### Pre-Deployment Checklist

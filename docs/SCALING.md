@@ -18,14 +18,14 @@ This document describes how to scale n8n workers in this deployment.
                 |     (Queue)      |
                 +--------+---------+
                          |
-     +-------------------+-------------------+
-     |         |         |         |         |
-     v         v         v         v         v
-+--------+ +--------+ +--------+ +--------+ +--------+
-|Worker 1| |Worker 2| |Worker 3| |Worker 4| |Worker 5|
-+--------+ +--------+ +--------+ +--------+ +--------+
+          +-------------------+-------------------+
+          |                                       |
+          v                                       v
+     +--------+                              +--------+
+     |Worker 1|          ...                 |Worker N|
+     +--------+                              +--------+
 
-Total Capacity: 3 workers x 10 concurrency = 30 simultaneous executions
+Total Capacity: 2 workers x 5 concurrency = 10 simultaneous executions (Coolify default)
 ```
 
 ---
@@ -34,9 +34,9 @@ Total Capacity: 3 workers x 10 concurrency = 30 simultaneous executions
 
 | Setting | Value | Location |
 |---------|-------|----------|
-| Default replicas | 3 | docker-compose.yml |
-| Concurrency per worker | 10 | .env (EXECUTIONS_CONCURRENCY) |
-| Memory limit per worker | 512 MB | docker-compose.yml |
+| Default replicas | 2 | docker-compose.yml / docker-compose.coolify.yml |
+| Concurrency per worker | 5 (Coolify) / 10 (local) | EXECUTIONS_CONCURRENCY |
+| Memory limit per worker | 1.5 GB | docker-compose.yml / docker-compose.coolify.yml |
 | Manual execution offload | true | .env (OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS) |
 | Redis timeout threshold | 60000 ms | .env (QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD) |
 
@@ -88,17 +88,16 @@ Workers complete in-flight jobs before stopping. If a worker is terminated durin
 
 ### Per-Worker Memory
 
-Each worker is limited to 512 MB. Typical usage is 200-300 MB.
+Each worker is limited to 1.5 GB (with 1024 MB Node.js heap). Typical usage is 200-500 MB.
 
 ### Scaling Memory Budget
 
 | Workers | Worker Memory | Total Stack | Notes |
 |---------|---------------|-------------|-------|
-| 1 | 512 MB | ~600 MB | Minimum configuration |
-| 2 | 1 GB | ~1.1 GB | Light workloads |
-| 5 | 2.5 GB | ~2.8 GB | Default (recommended) |
-| 8 | 4 GB | ~4.3 GB | High throughput |
-| 10 | 5 GB | ~5.3 GB | Maximum (within 8 GB limit) |
+| 1 | 1.5 GB | ~2.9 GB | Minimum configuration |
+| 2 | 3 GB | ~4.4 GB | Default (recommended) |
+| 3 | 4.5 GB | ~5.9 GB | Moderate workloads |
+| 5 | 7.5 GB | ~8.9 GB | High throughput |
 
 ### Monitor Memory Usage
 

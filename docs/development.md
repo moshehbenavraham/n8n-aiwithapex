@@ -2,7 +2,7 @@
 
 Day-to-day operations for the n8n stack.
 
-> **Custom Fork Optimized**: This deployment infrastructure supports our custom n8n fork at [github.com/moshehbenavraham/n8n](https://github.com/moshehbenavraham/n8n). Toggle between official and custom fork images via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](ongoing-roadmap/custom-fork.md) for development workflow.
+> **Image**: Uses the official `n8nio/n8n:latest` image by default. A custom fork can optionally be used via the `N8N_IMAGE` variable in `.env`. See [Custom Fork Guide](custom-fork.md) for details.
 
 ## Service Management
 
@@ -61,11 +61,11 @@ open http://localhost:4043
 ## Scaling Workers
 
 ```bash
+# Scale to 2 workers (default)
+docker compose up -d --scale n8n-worker=2
+
 # Scale to 3 workers
 docker compose up -d --scale n8n-worker=3
-
-# Scale to 5 workers
-docker compose up -d --scale n8n-worker=5
 
 # Scale back to 1
 docker compose up -d --scale n8n-worker=1
