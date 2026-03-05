@@ -17,7 +17,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BACKUP_DIR="${PROJECT_DIR}/backups/redis"
 LOG_FILE="${PROJECT_DIR}/logs/backup.log"
-CONTAINER_NAME="n8n-redis"
 
 # Source environment variables for Redis port
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
@@ -25,9 +24,15 @@ if [[ -f "${PROJECT_DIR}/.env" ]]; then
 	source "${PROJECT_DIR}/.env"
 fi
 
+CONTAINER_NAME="${REDIS_CONTAINER:-n8n-redis}"
+
 # Redis settings
 REDIS_PORT="${REDIS_PORT:-6379}"
-REDIS_CLI="redis-cli -p ${REDIS_PORT}"
+if [[ -n "${REDIS_PASSWORD:-}" ]]; then
+	REDIS_CLI="redis-cli -p ${REDIS_PORT} -a ${REDIS_PASSWORD} --no-auth-warning"
+else
+	REDIS_CLI="redis-cli -p ${REDIS_PORT}"
+fi
 
 # Backup settings
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')

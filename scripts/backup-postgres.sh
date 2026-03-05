@@ -17,7 +17,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BACKUP_DIR="${PROJECT_DIR}/backups/postgres"
 LOG_FILE="${PROJECT_DIR}/logs/backup.log"
-CONTAINER_NAME="n8n-postgres"
 
 # Source environment variables
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
@@ -27,6 +26,8 @@ else
 	echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') [backup-postgres] .env file not found" | tee -a "$LOG_FILE"
 	exit 1
 fi
+
+CONTAINER_NAME="${POSTGRES_CONTAINER:-n8n-postgres}"
 
 # Backup settings
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')

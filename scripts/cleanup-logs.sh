@@ -17,13 +17,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LOG_FILE="${PROJECT_DIR}/logs/cleanup-logs.log"
 
+# Source environment variables
+if [[ -f "${PROJECT_DIR}/.env" ]]; then
+	# shellcheck source=/dev/null
+	source "${PROJECT_DIR}/.env"
+fi
+
 # Default settings
 DRY_RUN=true
 # shellcheck disable=SC2034
 FORCE=false # Used to indicate force mode was explicitly requested
 
-# Container prefixes to clean
-CONTAINER_PREFIX="n8n-"
+# Container prefixes to clean (empty = all containers)
+CONTAINER_PREFIX="${CONTAINER_PREFIX:-}"
 
 # -----------------------------------------------------------------------------
 # Functions

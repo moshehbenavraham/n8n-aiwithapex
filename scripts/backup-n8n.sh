@@ -17,7 +17,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BACKUP_DIR="${PROJECT_DIR}/backups/n8n"
 LOG_FILE="${PROJECT_DIR}/logs/backup.log"
-VOLUME_NAME="n8n_n8n_data"
+
+# Source environment variables
+if [[ -f "${PROJECT_DIR}/.env" ]]; then
+	# shellcheck source=/dev/null
+	source "${PROJECT_DIR}/.env"
+fi
+
+VOLUME_NAME="${N8N_VOLUME:-n8n_n8n_data}"
 
 # Backup settings
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
