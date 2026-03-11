@@ -305,7 +305,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 180s
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -383,7 +383,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 180s
     security_opt:
       - no-new-privileges:true
     cap_drop:
