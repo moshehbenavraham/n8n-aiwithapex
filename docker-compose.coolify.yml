@@ -467,8 +467,6 @@ services:
     volumes:
       - runner-config:/runner-config:ro
     depends_on:
-      runner-init:
-        condition: service_completed_successfully
       n8n-worker-1:
         condition: service_healthy
     healthcheck:
@@ -513,8 +511,6 @@ services:
     volumes:
       - runner-config:/runner-config:ro
     depends_on:
-      runner-init:
-        condition: service_completed_successfully
       n8n-worker-2:
         condition: service_healthy
     healthcheck:
