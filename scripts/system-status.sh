@@ -17,12 +17,40 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LOG_FILE="${PROJECT_DIR}/logs/system-status.log"
 
+# Source local environment when available so Redis/ngrok checks use real settings.
+if [[ -f "${PROJECT_DIR}/.env" ]]; then
+	# shellcheck disable=SC1091
+	set -a
+	source "${PROJECT_DIR}/.env"
+	set +a
+fi
+
 # Endpoints
 HEALTHZ_URL="http://localhost:5678/healthz"
 N8N_URL="http://localhost:5678"
 METRICS_URL="http://localhost:5678/metrics"
 
 # Redis settings (non-standard port) - used via docker exec to n8n-redis
+REDIS_CONTAINER="n8n-redis"
+REDIS_PORT="${REDIS_PORT:-6386}"
+
+redis_cli() {
+	if [[ -n "${REDIS_PASSWORD:-}" ]]; then
+		docker exec "$REDIS_CONTAINER" redis-cli -p "$REDIS_PORT" -a "$REDIS_PASSWORD" "$@" 2>/dev/null
+	else
+		docker exec "$REDIS_CONTAINER" redis-cli -p "$REDIS_PORT" "$@" 2>/dev/null
+	fi
+}
+
+read_redis_count() {
+	local value="$1"
+
+	if [[ "$value" =~ ^[0-9]+$ ]]; then
+		echo "$value"
+	else
+		echo ""
+	fi
+}
 
 # Output format (reserved for future JSON output support)
 # shellcheck disable=SC2034
@@ -180,22 +208,26 @@ show_queue_status() {
 	print_section_header "QUEUE STATUS"
 
 	# Try to get queue info from Redis via docker exec
-	local redis_container="n8n-redis"
-
 	# Check if redis container exists
-	if ! docker ps --format "{{.Names}}" 2>/dev/null | grep -q "^${redis_container}$"; then
+	if ! docker ps --format "{{.Names}}" 2>/dev/null | grep -q "^${REDIS_CONTAINER}$"; then
 		echo "  Redis container not running"
 		return 1
 	fi
 
 	# Get Bull queue keys from Redis
 	local queue_keys
-	queue_keys=$(docker exec "$redis_container" redis-cli -p 6386 KEYS "bull:*" 2>/dev/null | head -20)
+	queue_keys=$(redis_cli KEYS "bull:*" | head -20)
 
 	if [[ -z "$queue_keys" ]]; then
 		echo "  No Bull queues found (or empty)"
 		echo "  Queue system: Ready"
 		return 0
+	fi
+
+	if echo "$queue_keys" | grep -qi "NOAUTH\|WRONGPASS"; then
+		echo "  Unable to query Redis queue state"
+		echo "  Redis authentication failed"
+		return 1
 	fi
 
 	# Count queue items
@@ -205,19 +237,19 @@ show_queue_status() {
 	local failed_count=0
 
 	# Get waiting jobs count
-	waiting_count=$(docker exec "$redis_container" redis-cli -p 6386 LLEN "bull:jobs:wait" 2>/dev/null || echo "0")
+	waiting_count=$(read_redis_count "$(redis_cli LLEN "bull:jobs:wait")")
 	[[ -z "$waiting_count" ]] && waiting_count=0
 
 	# Get active jobs count
-	active_count=$(docker exec "$redis_container" redis-cli -p 6386 LLEN "bull:jobs:active" 2>/dev/null || echo "0")
+	active_count=$(read_redis_count "$(redis_cli LLEN "bull:jobs:active")")
 	[[ -z "$active_count" ]] && active_count=0
 
 	# Get completed jobs count (from sorted set)
-	completed_count=$(docker exec "$redis_container" redis-cli -p 6386 ZCARD "bull:jobs:completed" 2>/dev/null || echo "0")
+	completed_count=$(read_redis_count "$(redis_cli ZCARD "bull:jobs:completed")")
 	[[ -z "$completed_count" ]] && completed_count=0
 
 	# Get failed jobs count
-	failed_count=$(docker exec "$redis_container" redis-cli -p 6386 ZCARD "bull:jobs:failed" 2>/dev/null || echo "0")
+	failed_count=$(read_redis_count "$(redis_cli ZCARD "bull:jobs:failed")")
 	[[ -z "$failed_count" ]] && failed_count=0
 
 	echo "  Queue Statistics:"
@@ -228,7 +260,7 @@ show_queue_status() {
 
 	# Check Redis memory usage
 	local redis_mem
-	redis_mem=$(docker exec "$redis_container" redis-cli -p 6386 INFO memory 2>/dev/null | grep "used_memory_human" | cut -d: -f2 | tr -d '\r')
+	redis_mem=$(redis_cli INFO memory | grep "used_memory_human" | cut -d: -f2 | tr -d '\r')
 	if [[ -n "$redis_mem" ]]; then
 		echo ""
 		echo "  Redis Memory: $redis_mem"
@@ -292,7 +324,7 @@ show_endpoint_status() {
 
 	# Check Redis connection
 	local redis_ping
-	redis_ping=$(docker exec n8n-redis redis-cli -p 6386 PING 2>/dev/null)
+	redis_ping=$(redis_cli PING)
 	if [[ "$redis_ping" == "PONG" ]]; then
 		printf "  %-30s %-10s %s\n" "Redis" "OK" "PONG"
 	else

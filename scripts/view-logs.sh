@@ -15,7 +15,7 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 
 # Valid services
-VALID_SERVICES=("postgres" "redis" "n8n" "worker" "ngrok" "all")
+VALID_SERVICES=("postgres" "redis" "n8n" "worker" "runner" "ngrok" "all")
 
 # Default settings
 SERVICE="all"
@@ -40,7 +40,7 @@ Usage: $(basename "$0") [OPTIONS]
 View logs from n8n stack containers.
 
 Options:
-  -s, --service SERVICE   Filter by service (postgres|redis|n8n|worker|all)
+  -s, --service SERVICE   Filter by service (postgres|redis|n8n|worker|runner|ngrok|all)
                           Default: all
   -n, --lines LINES       Number of lines to show (default: 100)
   -f, --follow            Follow log output (like tail -f)
@@ -51,6 +51,7 @@ Services:
   redis       Redis cache logs
   n8n         n8n main application logs
   worker      n8n worker logs (all replicas)
+  runner      n8n task runner logs (all replicas)
   ngrok       ngrok tunnel container logs
   all         All services (default)
 
@@ -92,13 +93,16 @@ get_container_names() {
 		echo "n8n"
 		;;
 	worker)
-		echo "n8n-worker"
+		echo "n8n-worker-1 n8n-worker-2"
+		;;
+	runner)
+		echo "runner-worker-1 runner-worker-2"
 		;;
 	ngrok)
 		echo "ngrok"
 		;;
 	all)
-		echo "postgres redis n8n n8n-worker ngrok"
+		echo "postgres redis n8n n8n-worker-1 n8n-worker-2 runner-worker-1 runner-worker-2 ngrok"
 		;;
 	esac
 }

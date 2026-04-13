@@ -28,8 +28,8 @@ DRY_RUN=true
 # shellcheck disable=SC2034
 FORCE=false # Used to indicate force mode was explicitly requested
 
-# Container prefixes to clean (empty = all containers)
-CONTAINER_PREFIX="${CONTAINER_PREFIX:-}"
+# Container prefixes to clean
+CONTAINER_PREFIX="${CONTAINER_PREFIX:-n8n-}"
 
 # -----------------------------------------------------------------------------
 # Functions

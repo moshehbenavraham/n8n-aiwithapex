@@ -12,19 +12,53 @@ set -o pipefail
 # =============================================================================
 # Configuration
 # =============================================================================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 
-# Source environment variables
-if [[ -f "${PROJECT_DIR}/.env" ]]; then
-	# shellcheck disable=SC1091
-	source "${PROJECT_DIR}/.env"
-fi
+load_env_defaults() {
+	local env_file="${PROJECT_DIR}/.env"
+	local line key value
+	local -A preserved_vars=()
+	local tracked_vars=("REDIS_HOST" "REDIS_PORT" "REDIS_CONTAINER" "REDIS_PASSWORD" "BULL_QUEUE_NAME")
+
+	[[ -f "${env_file}" ]] || return 0
+
+	for key in "${tracked_vars[@]}"; do
+		if [[ -n "${!key+x}" ]]; then
+			preserved_vars["${key}"]=1
+		fi
+	done
+
+	while IFS= read -r line || [[ -n "${line}" ]]; do
+		[[ "${line}" =~ ^[[:space:]]*# ]] && continue
+		[[ "${line}" =~ ^[[:space:]]*$ ]] && continue
+		[[ "${line}" != *=* ]] && continue
+
+		key="${line%%=*}"
+		value="${line#*=}"
+		key="${key#"${key%%[![:space:]]*}"}"
+		key="${key%"${key##*[![:space:]]}"}"
+		value="${value%$'\r'}"
+
+		if [[ "${value}" =~ ^\".*\"$ || "${value}" =~ ^\'.*\'$ ]]; then
+			value="${value:1:-1}"
+		fi
+
+		if [[ -n "${preserved_vars[${key}]:-}" ]]; then
+			continue
+		fi
+
+		printf -v "${key}" '%s' "${value}"
+	done <"${env_file}"
+}
+
+load_env_defaults
 
 # Redis connection settings (from .env or defaults)
 REDIS_HOST="${REDIS_HOST:-redis}"
 REDIS_PORT="${REDIS_PORT:-6386}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-n8n-redis}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
 
 # Bull queue configuration
 # n8n uses "jobs" as the Bull queue name
@@ -64,7 +98,19 @@ log_error() {
 # Arguments: $@ - Redis CLI arguments
 # Returns: Command output or empty on failure
 redis_cmd() {
-	docker exec "${REDIS_CONTAINER}" redis-cli -h localhost -p "${REDIS_PORT}" "$@" 2>/dev/null
+	local cmd=("redis-cli")
+
+	if [[ -n "${REDIS_PORT}" ]]; then
+		cmd+=("-p" "${REDIS_PORT}")
+	fi
+
+	if [[ -n "${REDIS_PASSWORD}" ]]; then
+		cmd+=("-a" "${REDIS_PASSWORD}")
+	fi
+
+	cmd+=("$@")
+
+	docker exec "${REDIS_CONTAINER}" "${cmd[@]}" 2>/dev/null
 }
 
 # Test Redis connectivity

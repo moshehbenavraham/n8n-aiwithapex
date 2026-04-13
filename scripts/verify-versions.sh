@@ -13,9 +13,9 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
+COMPOSE_FILE="${COMPOSE_FILE:-${PROJECT_DIR}/docker-compose.yml}"
 
 # ANSI colors
 RED='\033[0;31m'
@@ -56,6 +56,19 @@ print_result() {
 
 get_pinned_version() {
 	local service="$1"
+	local image
+
+	image=$(docker compose -f "$COMPOSE_FILE" config 2>/dev/null | awk -v svc="  ${service}:" '
+		$0 == svc { in_service=1; next }
+		in_service && /^[^[:space:]]/ { in_service=0 }
+		in_service && $1 == "image:" { print $2; exit }
+	')
+
+	if [[ -n "$image" ]]; then
+		echo "$image"
+		return 0
+	fi
+
 	grep -A1 "^  ${service}:" "$COMPOSE_FILE" | grep "image:" | awk -F: '{print $2":"$3}' | tr -d ' '
 }
 
@@ -109,8 +122,17 @@ main() {
 	fi
 
 	# Check n8n worker
-	PINNED_WORKER=$(get_pinned_version "n8n-worker")
-	RUNNING_WORKER=$(get_running_version "n8n-n8n-worker-1")
+	PINNED_WORKER=$(get_pinned_version "n8n-worker-1")
+	if [[ -z "$PINNED_WORKER" ]]; then
+		PINNED_WORKER=$(get_pinned_version "n8n-worker")
+	fi
+	if [[ -z "$PINNED_WORKER" ]]; then
+		PINNED_WORKER="$PINNED_N8N"
+	fi
+	RUNNING_WORKER=$(get_running_version "n8n-worker-1")
+	if [[ -z "$RUNNING_WORKER" ]]; then
+		RUNNING_WORKER=$(get_running_version "n8n-n8n-worker-1")
+	fi
 	if [[ "$PINNED_WORKER" == "$RUNNING_WORKER" ]]; then
 		print_result "n8n-worker" "$PINNED_WORKER" "$RUNNING_WORKER" "MATCH"
 	elif [[ -z "$RUNNING_WORKER" ]]; then

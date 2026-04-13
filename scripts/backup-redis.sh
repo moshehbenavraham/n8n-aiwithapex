@@ -13,10 +13,10 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BACKUP_DIR="${PROJECT_DIR}/backups/redis"
-LOG_FILE="${PROJECT_DIR}/logs/backup.log"
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
+BACKUP_DIR="${BACKUP_DIR:-${PROJECT_DIR}/backups/redis}"
+LOG_FILE="${LOG_FILE:-${PROJECT_DIR}/logs/backup.log}"
 
 # Source environment variables for Redis port
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
@@ -24,15 +24,20 @@ if [[ -f "${PROJECT_DIR}/.env" ]]; then
 	source "${PROJECT_DIR}/.env"
 fi
 
-CONTAINER_NAME="${REDIS_CONTAINER:-n8n-redis}"
+CONTAINER_NAME="${CONTAINER_NAME:-${REDIS_CONTAINER:-n8n-redis}}"
 
 # Redis settings
 REDIS_PORT="${REDIS_PORT:-6379}"
-if [[ -n "${REDIS_PASSWORD:-}" ]]; then
-	REDIS_CLI="redis-cli -p ${REDIS_PORT} -a ${REDIS_PASSWORD} --no-auth-warning"
-else
-	REDIS_CLI="redis-cli -p ${REDIS_PORT}"
-fi
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+redis_cli() {
+	local cmd=("redis-cli" "-p" "${REDIS_PORT}")
+	if [[ -n "${REDIS_PASSWORD}" ]]; then
+		cmd+=("-a" "${REDIS_PASSWORD}" "--no-auth-warning")
+	fi
+	cmd+=("$@")
+	docker exec "${CONTAINER_NAME}" "${cmd[@]}" 2>/dev/null
+}
 
 # Backup settings
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
@@ -78,7 +83,7 @@ main() {
 
 	# Get current LASTSAVE timestamp before BGSAVE
 	# shellcheck disable=SC2086
-	LAST_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
+	LAST_SAVE=$(redis_cli LASTSAVE)
 	if [[ -z "$LAST_SAVE" ]]; then
 		log_error "Failed to get LASTSAVE from Redis (port ${REDIS_PORT})"
 		exit 1
@@ -88,7 +93,7 @@ main() {
 	# Trigger background save
 	log_info "Triggering BGSAVE"
 	# shellcheck disable=SC2086
-	BGSAVE_RESULT=$(docker exec "$CONTAINER_NAME" $REDIS_CLI BGSAVE 2>/dev/null)
+	BGSAVE_RESULT=$(redis_cli BGSAVE)
 	if [[ "$BGSAVE_RESULT" != *"started"* && "$BGSAVE_RESULT" != *"scheduled"* ]]; then
 		log_error "BGSAVE failed: ${BGSAVE_RESULT}"
 		exit 1
@@ -99,7 +104,7 @@ main() {
 	WAIT_COUNT=0
 	while [[ $WAIT_COUNT -lt $MAX_WAIT_SECONDS ]]; do
 		# shellcheck disable=SC2086
-		CURRENT_SAVE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI LASTSAVE 2>/dev/null)
+		CURRENT_SAVE=$(redis_cli LASTSAVE)
 		if [[ "$CURRENT_SAVE" != "$LAST_SAVE" ]]; then
 			log_info "BGSAVE completed. New LASTSAVE: ${CURRENT_SAVE}"
 			break

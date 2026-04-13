@@ -115,7 +115,7 @@ teardown() {
 # -----------------------------------------------------------------------------
 
 @test "apply-sysctl: --verify detects missing system config" {
-	run "$SCRIPTS_DIR/apply-sysctl.sh" --verify
+	run env SYSTEM_CONFIG="$TEST_TEMP_DIR/missing-sysctl.conf" LOG_FILE="$TEST_LOG_DIR/apply-sysctl.log" "$SCRIPTS_DIR/apply-sysctl.sh" --verify
 	assert_failure
 	assert_output --partial "Config not installed"
 }

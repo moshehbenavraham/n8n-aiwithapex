@@ -12,10 +12,10 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-LOG_FILE="${PROJECT_DIR}/logs/backup.log"
-CONTAINER_NAME="n8n-redis"
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
+LOG_FILE="${LOG_FILE:-${PROJECT_DIR}/logs/backup.log}"
+CONTAINER_NAME="${CONTAINER_NAME:-n8n-redis}"
 
 # Source environment variables
 if [[ -f "${PROJECT_DIR}/.env" ]]; then
@@ -27,7 +27,16 @@ else
 fi
 
 REDIS_PORT="${REDIS_PORT:-6379}"
-REDIS_CLI="redis-cli -p ${REDIS_PORT}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+redis_cli() {
+	local cmd=("redis-cli" "-p" "${REDIS_PORT}")
+	if [[ -n "${REDIS_PASSWORD}" ]]; then
+		cmd+=("-a" "${REDIS_PASSWORD}")
+	fi
+	cmd+=("$@")
+	docker exec "${CONTAINER_NAME}" "${cmd[@]}" 2>/dev/null
+}
 
 # -----------------------------------------------------------------------------
 # Functions
@@ -194,7 +203,7 @@ main() {
 	# Stop Redis to replace RDB file
 	log_info "Initiating Redis shutdown for RDB replacement..."
 	# shellcheck disable=SC2086
-	docker exec "$CONTAINER_NAME" $REDIS_CLI SHUTDOWN NOSAVE 2>/dev/null || true
+	redis_cli SHUTDOWN NOSAVE || true
 
 	# Wait for container to stop
 	sleep 2
@@ -210,7 +219,7 @@ main() {
 	while [[ $WAIT_COUNT -lt $MAX_WAIT ]]; do
 		if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 			# shellcheck disable=SC2086
-			if docker exec "$CONTAINER_NAME" $REDIS_CLI PING 2>/dev/null | grep -q "PONG"; then
+			if redis_cli PING | grep -q "PONG"; then
 				log_info "Redis is back online"
 				break
 			fi
@@ -228,7 +237,7 @@ main() {
 	# Verify data loaded
 	log_info "Verifying restore..."
 	# shellcheck disable=SC2086
-	DBSIZE=$(docker exec "$CONTAINER_NAME" $REDIS_CLI DBSIZE 2>/dev/null | grep -oE '[0-9]+' || echo "0")
+	DBSIZE=$(redis_cli DBSIZE | grep -oE '[0-9]+' || echo "0")
 	log_info "Redis database size: ${DBSIZE} keys"
 
 	log_success "Redis restore completed from: ${BACKUP_FILE}"

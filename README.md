@@ -1,6 +1,6 @@
 # n8n
 
-**Version 1.1.3**
+**Version 1.1.4**
 
 2 Launchpads - Local/Docker and Coolify
 

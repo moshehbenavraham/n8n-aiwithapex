@@ -17,10 +17,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LOG_FILE="${PROJECT_DIR}/logs/health-check.log"
 
+# Source local environment when available so health checks match the live stack.
+if [[ -f "${PROJECT_DIR}/.env" ]]; then
+	# shellcheck disable=SC1091
+	set -a
+	source "${PROJECT_DIR}/.env"
+	set +a
+fi
+
 # Health check settings
 HEALTHZ_URL="http://localhost:5678/healthz"
 HEALTHZ_TIMEOUT=5
-EXPECTED_WORKERS=5
+EXPECTED_WORKERS="${EXPECTED_WORKERS:-2}"
 
 # Container names (actual Docker container names)
 REQUIRED_CONTAINERS=("n8n-postgres" "n8n-redis" "n8n-main" "n8n-ngrok")
@@ -53,7 +61,7 @@ show_help() {
 Usage: $(basename "$0") [OPTIONS]
 
 Validates n8n stack health by checking:
-  - Container running status (postgres, redis, n8n, n8n-worker)
+  - Container running status (postgres, redis, n8n, workers)
   - Container health states (Docker HEALTHCHECK)
   - /healthz endpoint response
   - Worker replica count
@@ -84,6 +92,10 @@ check_docker() {
 		return 1
 	fi
 	return 0
+}
+
+list_worker_containers() {
+	docker compose ps --format json 2>/dev/null | jq -r 'select(.Service | startswith("n8n-worker-")) | .Name'
 }
 
 # T009: Check container health using docker inspect
@@ -194,7 +206,7 @@ check_worker_replicas() {
 			((unhealthy_workers++))
 			log_warn "Worker $worker_name: $health"
 		fi
-	done < <(docker compose ps --format json 2>/dev/null | jq -r 'select(.Service == "n8n-worker") | .Name')
+	done < <(list_worker_containers)
 
 	log_info "Workers: $healthy_workers healthy, $unhealthy_workers unhealthy (expected: $EXPECTED_WORKERS)"
 
@@ -241,7 +253,7 @@ check_autoscale_status() {
 
 	# Get current worker count
 	local current_workers=0
-	current_workers=$(docker compose ps --format json 2>/dev/null | jq -r 'select(.Service == "n8n-worker" and .State == "running") | .Name' | wc -l)
+	current_workers=$(docker compose ps --format json 2>/dev/null | jq -r 'select((.Service | startswith("n8n-worker-")) and .State == "running") | .Name' | wc -l)
 
 	# Check cooldown status
 	local cooldown_remaining=0

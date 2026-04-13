@@ -103,7 +103,24 @@ exec)
 		echo "OK"
 		;;
 	redis-cli)
-		case "$2" in
+		shift
+		redis_cmd=""
+		while [[ $# -gt 0 ]]; do
+			case "$1" in
+			-h | -p | -a | --user)
+				shift 2
+				;;
+			--raw | --no-auth-warning)
+				shift
+				;;
+			*)
+				redis_cmd="$1"
+				shift
+				break
+				;;
+			esac
+		done
+		case "$redis_cmd" in
 		LASTSAVE)
 			echo "1703548800"
 			;;
@@ -182,13 +199,29 @@ volume)
 		;;
 	esac
 	;;
-compose)
-	case "$2" in
-	ps)
-		echo '{"Service":"n8n-worker","Name":"n8n-n8n-worker-1","State":"running"}'
-		;;
-	logs)
+	compose)
+		case "$2" in
+		ps)
+			echo '{"Service":"n8n-worker-1","Name":"n8n-worker-1","State":"running"}'
+			echo '{"Service":"n8n-worker-2","Name":"n8n-worker-2","State":"running"}'
+			;;
+		config)
+			if [[ "$*" == *"--services"* ]]; then
+				echo "postgres"
+				echo "redis"
+				echo "n8n"
+				echo "ngrok"
+				echo "n8n-worker-1"
+				echo "n8n-worker-2"
+				echo "runner-worker-1"
+				echo "runner-worker-2"
+			fi
+			;;
+		logs)
 		echo "[2024-01-01 12:00:00] Mock log output"
+		;;
+		up | stop)
+		echo "mock compose $2"
 		;;
 	exec)
 		echo "mock compose exec"

@@ -173,7 +173,7 @@ main() {
 	# Check if n8n container is running
 	if docker ps --format '{{.Names}}' | grep -q "^${N8N_CONTAINER}$"; then
 		log_warn "n8n container is running - recommend stopping first"
-		log_warn "Run: docker compose stop n8n n8n-worker"
+		log_warn "Run: docker compose stop n8n n8n-worker-1 n8n-worker-2 runner-worker-1 runner-worker-2"
 	fi
 
 	# Check if running interactively
@@ -243,7 +243,7 @@ main() {
 	fi
 
 	log_success "n8n data restore completed from: ${BACKUP_FILE}"
-	log_info "Restart n8n services: docker compose up -d n8n n8n-worker"
+	log_info "Restart n8n services: docker compose up -d n8n n8n-worker-1 n8n-worker-2 runner-worker-1 runner-worker-2"
 	exit 0
 }
 

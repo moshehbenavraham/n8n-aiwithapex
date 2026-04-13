@@ -13,11 +13,11 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-CONFIG_FILE="${PROJECT_DIR}/config/99-n8n-optimizations.conf"
-SYSTEM_CONFIG="/etc/sysctl.d/99-n8n-optimizations.conf"
-LOG_FILE="${PROJECT_DIR}/logs/sysctl.log"
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
+CONFIG_FILE="${CONFIG_FILE:-${PROJECT_DIR}/config/99-n8n-optimizations.conf}"
+SYSTEM_CONFIG="${SYSTEM_CONFIG:-/etc/sysctl.d/99-n8n-optimizations.conf}"
+LOG_FILE="${LOG_FILE:-${PROJECT_DIR}/logs/sysctl.log}"
 
 # Required sysctl settings
 declare -A REQUIRED_SETTINGS=(

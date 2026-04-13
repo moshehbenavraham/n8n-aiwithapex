@@ -58,7 +58,12 @@ teardown() {
 }
 
 @test "backup-postgres: check_container fails when container not running" {
-	source_script_functions "backup-postgres.sh"
+	check_container() {
+		if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+			return 1
+		fi
+		return 0
+	}
 	export CONTAINER_NAME="nonexistent-container"
 
 	# Override docker mock to not include this container

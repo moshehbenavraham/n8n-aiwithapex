@@ -55,6 +55,9 @@ teardown() {
 	run validate_service "worker"
 	assert_success
 
+	run validate_service "runner"
+	assert_success
+
 	run validate_service "all"
 	assert_success
 }
@@ -85,10 +88,13 @@ teardown() {
 	assert_output "n8n"
 
 	run get_container_names "worker"
-	assert_output "n8n-worker"
+	assert_output "n8n-worker-1 n8n-worker-2"
+
+	run get_container_names "runner"
+	assert_output "runner-worker-1 runner-worker-2"
 
 	run get_container_names "all"
-	assert_output "postgres redis n8n n8n-worker ngrok"
+	assert_output "postgres redis n8n n8n-worker-1 n8n-worker-2 runner-worker-1 runner-worker-2 ngrok"
 }
 
 # -----------------------------------------------------------------------------
@@ -103,6 +109,7 @@ teardown() {
 	[[ "$services_str" == *"redis"* ]]
 	[[ "$services_str" == *"n8n"* ]]
 	[[ "$services_str" == *"worker"* ]]
+	[[ "$services_str" == *"runner"* ]]
 	[[ "$services_str" == *"all"* ]]
 }
 

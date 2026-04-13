@@ -195,7 +195,7 @@ main() {
 		log_warn "FORCE drop failed, trying standard drop..."
 		if ! docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null; then
 			log_error "Failed to drop database - active connections may be preventing drop"
-			log_error "Consider stopping n8n services before restore: docker compose stop n8n n8n-worker"
+			log_error "Consider stopping n8n services before restore: docker compose stop n8n n8n-worker-1 n8n-worker-2 runner-worker-1 runner-worker-2"
 			exit 1
 		fi
 	fi
