@@ -139,7 +139,7 @@ services:
       N8N_CACHE_BACKEND: redis
       # Security
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
-      N8N_TRUST_PROXY: ${N8N_TRUST_PROXY:-true}
+      N8N_PROXY_HOPS: ${N8N_PROXY_HOPS:-1}
       # Graceful Shutdown
       N8N_GRACEFUL_SHUTDOWN_TIMEOUT: 60
       # Privacy (disable telemetry)

@@ -198,7 +198,7 @@ services:
 
       # Security
       - N8N_SECURE_COOKIE=true
-      - N8N_TRUST_PROXY=true
+      - N8N_PROXY_HOPS=1
 
       # Privacy (disable telemetry)
       - N8N_DIAGNOSTICS_ENABLED=false
