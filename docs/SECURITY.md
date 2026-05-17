@@ -13,7 +13,7 @@ This guide covers security for the n8n deployment running in WSL2 with external 
 | Image Versions | Pinned | n8n:2.1.4, postgres:16.11-alpine, redis:7.4.7-alpine |
 | Network Exposure | Localhost + ngrok | Port 5678 local, HTTPS via ngrok tunnel |
 | ngrok OAuth | Enabled | Google OAuth restricted to @aiwithapex.com, @apexwebservices.com |
-| Webhook Access | Public | /webhook/* paths bypass OAuth for external services |
+| Public Workflow Access | Public | Webhook and form paths bypass OAuth for external services and public forms |
 | Secure Cookie | Enabled | Required for HTTPS ngrok access |
 | Secrets | .env file | Gitignored, local only |
 | Database | Internal only | Port 5432 not exposed to host |
@@ -68,14 +68,15 @@ User Request --> ngrok Edge --> Traffic Policy --> OAuth Check
                                                        |
                             +--------------------------+
                             |                          |
-                      /webhook/*              All other paths
-                            |                          |
-                            v                          v
-                     [Passthrough]            [Google OAuth]
-                            |                          |
-                            v                          v
-                      n8n webhook              Google Login
-                       handler                         |
+                 public workflow           All other paths
+                    endpoints                       |
+                            |                       v
+                            v              [Google OAuth]
+                     [Passthrough]                  |
+                            |                       v
+                            v                Google Login
+                     n8n workflow                    |
+                      endpoint                       |
                                                       v
                                               [Authenticated]
                                                       |
@@ -93,28 +94,32 @@ traffic_policy:
   on_http_request:
     - name: "Require Google OAuth for UI access"
       expressions:
-        - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+        - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
       actions:
         - type: oauth
           config:
             provider: google
 ```
 
-### Webhook Passthrough
+### Public Workflow Passthrough
 
-Webhook paths are excluded from OAuth to allow external services to trigger workflows:
+Public workflow paths are excluded from OAuth to allow external services to trigger workflows and users to submit public n8n forms:
 
 | Path Pattern | OAuth Required | Reason |
 |--------------|----------------|--------|
 | `/webhook/*` | No | Production webhook callbacks |
 | `/webhook-test/*` | No | Test webhook callbacks |
+| `/webhook-waiting/*` | No | Waiting webhook callbacks |
+| `/form/*` | No | Production n8n forms |
+| `/form-test/*` | No | Test n8n forms |
+| `/form-waiting/*` | No | Waiting n8n forms |
 | All other paths | Yes | UI and API access |
 
 ### Security Considerations
 
 1. **Domain-restricted OAuth**: Only @aiwithapex.com and @apexwebservices.com Google accounts can access
 2. **Defense in depth**: OAuth + n8n built-in auth = two authentication layers
-3. **Webhook exposure**: Webhook paths are public; n8n handles webhook authentication via workflow configuration
+3. **Public endpoint exposure**: Webhook and form paths are public; n8n handles endpoint authentication via workflow configuration
 4. **Session management**: OAuth sessions managed by ngrok (configurable timeout)
 
 ### Domain Restriction
@@ -125,7 +130,7 @@ Access is restricted to specific email domains via a traffic policy rule:
 # Rule 2: Deny access if email domain is not allowed
 - name: "Restrict to allowed email domains"
   expressions:
-    - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+    - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
     - "!(actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com') || actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com'))"
   actions:
     - type: custom-response

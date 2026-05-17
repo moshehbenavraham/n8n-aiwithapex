@@ -78,10 +78,10 @@ endpoints:
       url: http://n8n:5678
     traffic_policy:
       on_http_request:
-        # Rule 1: Require OAuth for non-webhook paths
+        # Rule 1: Require OAuth for non-public paths
         - name: "Require Google OAuth for UI access"
           expressions:
-            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
           actions:
             - type: oauth
               config:
@@ -90,7 +90,7 @@ endpoints:
         # Rule 2: Restrict to allowed email domains
         - name: "Restrict to allowed email domains"
           expressions:
-            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
             - "!(actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com') || actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com'))"
           actions:
             - type: custom-response
@@ -114,10 +114,10 @@ endpoints:
 
 The traffic policy implements OAuth-based access control:
 
-- **Webhook paths** (`/webhook/*`, `/webhook-test/*`): Pass through without authentication
+- **Public workflow paths** (`/webhook/*`, `/webhook-test/*`, `/webhook-waiting/*`, `/form/*`, `/form-test/*`, `/form-waiting/*`): Pass through without authentication
 - **All other paths**: Require Google OAuth login
 
-This is achieved using a CEL (Common Expression Language) expression that excludes webhook paths from the OAuth requirement.
+This is achieved using a CEL (Common Expression Language) expression that excludes public n8n workflow endpoints from the OAuth requirement.
 
 ## Setup
 
@@ -324,7 +324,7 @@ A template for Ollama LLM service is included but commented out. To enable:
 The tunnel is protected by Google OAuth at the ngrok edge:
 
 - **Defense in depth**: OAuth at ngrok edge + n8n built-in authentication
-- **Webhook bypass**: `/webhook/*` and `/webhook-test/*` paths pass through without OAuth (required for external services to trigger workflows)
+- **Public workflow bypass**: `/webhook/*`, `/webhook-test/*`, `/webhook-waiting/*`, `/form/*`, `/form-test/*`, and `/form-waiting/*` paths pass through without OAuth (required for external services and public n8n forms)
 - **Domain restriction**: Only `@aiwithapex.com` and `@apexwebservices.com` Google accounts can access
 
 Users with other Google accounts will be denied with HTTP 403 after OAuth login.
@@ -340,14 +340,15 @@ External Request --> ngrok Edge
               | Evaluation        |
               +-------------------+
                     |         |
-           /webhook/*       Other paths
-                |                |
-                v                v
-          [PASSTHROUGH]    [OAuth Required]
-                |                |
-                v                v
-          n8n Webhook      Google OAuth
-          Handler          Login Flow
+       public workflow     Other paths
+          endpoints             |
+                |                v
+                v          [OAuth Required]
+          [PASSTHROUGH]         |
+                |                v
+                v          Google OAuth
+          n8n Workflow     Login Flow
+          Endpoint
                                 |
                                 v
                           [Authenticated]

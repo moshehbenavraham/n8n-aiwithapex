@@ -45,8 +45,8 @@ endpoints:
   # ---------------------------------------------------------------------------
   # n8n Workflow Automation (ACTIVE)
   # ---------------------------------------------------------------------------
-  # Primary endpoint for n8n web UI and webhook processing.
-  # OAuth required for UI access, webhooks bypass authentication.
+  # Primary endpoint for n8n web UI and public workflow endpoints.
+  # OAuth required for UI access; webhooks and forms bypass authentication.
   # ---------------------------------------------------------------------------
   - name: n8n
     url: https://n8n.aiwithapex.ngrok.dev
@@ -54,35 +54,35 @@ endpoints:
       url: http://n8n:5678
     traffic_policy:
       on_http_request:
-        # Rule 0: Rate limit webhook requests to prevent flooding/DoS
-        - name: "Rate limit webhook requests"
+        # Rule 0: Rate limit public workflow requests to prevent flooding/DoS
+        - name: "Rate limit public workflow requests"
           expressions:
-            - "req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/')"
+            - "req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/')"
           actions:
             - type: rate-limit
               config:
-                name: webhook-rate-limit
+                name: public-workflow-rate-limit
                 algorithm: sliding_window
                 capacity: 120
                 rate: "60s"
                 bucket_key:
                   - conn.client_ip
 
-        # Rule 1: Require Google OAuth for all non-webhook paths
+        # Rule 1: Require Google OAuth for non-public paths
         - name: "Require Google OAuth for UI access"
           expressions:
-            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
           actions:
             - type: oauth
               config:
                 provider: google
 
         # Rule 2: Deny access if email domain is not allowed
-        # Only applies to authenticated requests (non-webhook paths)
+        # Only applies to authenticated requests (non-public paths)
         # Logic: !(A || B) = !A && !B - deny if not either allowed domain
         - name: "Restrict to allowed email domains"
           expressions:
-            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/'))"
+            - "!(req.url.path.startsWith('/webhook/') || req.url.path.startsWith('/webhook-test/') || req.url.path.startsWith('/webhook-waiting/') || req.url.path.startsWith('/form/') || req.url.path.startsWith('/form-test/') || req.url.path.startsWith('/form-waiting/'))"
             - "!actions.ngrok.oauth.identity.email.endsWith('@aiwithapex.com')"
             - "!actions.ngrok.oauth.identity.email.endsWith('@apexwebservices.com')"
           actions:
