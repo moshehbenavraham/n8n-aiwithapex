@@ -4,7 +4,7 @@
 # - Queue mode with Redis (password-protected)
 # - 2 workers (10 parallel executions)
 # - PostgreSQL 16.11 with tuned settings
-# - Official n8n image (n8nio/n8n:latest)
+# - Official n8n image (n8nio/n8n:2.31.7)
 # - Prometheus metrics
 # - Health checks on all services
 # - Privacy-respecting configuration
@@ -140,7 +140,7 @@ services:
   # n8n Main Instance (UI + Webhooks + API)
   # ===========================================
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.31.7
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -244,7 +244,7 @@ services:
   # n8n Worker 1
   # ===========================================
   n8n-worker-1:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.31.7
     pull_policy: always
     restart: unless-stopped
     command: worker
@@ -322,7 +322,7 @@ services:
   # n8n Worker 2
   # ===========================================
   n8n-worker-2:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.31.7
     pull_policy: always
     restart: unless-stopped
     command: worker
@@ -447,7 +447,7 @@ services:
   # Task Runner for Worker 1
   # ===========================================
   runner-worker-1:
-    image: n8nio/runners:latest
+    image: n8nio/runners:2.31.7
     pull_policy: always
     restart: unless-stopped
     entrypoint: ["tini", "--", "/usr/local/bin/task-runner-launcher", "javascript", "python"]
@@ -491,7 +491,7 @@ services:
   # Task Runner for Worker 2
   # ===========================================
   runner-worker-2:
-    image: n8nio/runners:latest
+    image: n8nio/runners:2.31.7
     pull_policy: always
     restart: unless-stopped
     entrypoint: ["tini", "--", "/usr/local/bin/task-runner-launcher", "javascript", "python"]

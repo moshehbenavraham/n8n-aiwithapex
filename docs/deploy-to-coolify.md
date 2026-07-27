@@ -26,9 +26,9 @@ Internet → Traefik → n8n-main (:5678)
 |---------|-------|--------|
 | postgres | postgres:16.11-alpine | 1GB |
 | redis | redis:7.4.7-alpine | 384MB |
-| n8n | n8nio/n8n:latest | 1GB |
-| n8n-worker-1/2 | n8nio/n8n:latest | 1.5GB each |
-| runner-worker-1/2 | n8nio/runners:latest | 512MB each |
+| n8n | n8nio/n8n:2.31.7 | 1GB |
+| n8n-worker-1/2 | n8nio/n8n:2.31.7 | 1.5GB each |
+| runner-worker-1/2 | n8nio/runners:2.31.7 | 512MB each |
 
 **Capacity**: 10 parallel executions (2 workers × 5 concurrency)
 

@@ -6,7 +6,7 @@
 
 Production-grade n8n workflow automation platform with Docker Compose, queue mode, distributed workers, and task runners.
 
-> **Custom Fork Support**: This deployment infrastructure can optionally run with a custom n8n fork (see [Custom Fork Guide](docs/custom-fork.md) for details). By default, both local and Coolify deployments use the official `n8nio/n8n:latest` image.
+> **Custom Fork Support**: This deployment infrastructure can optionally run with a custom n8n fork (see [Custom Fork Guide](docs/custom-fork.md) for details). By default, both local and Coolify deployments use the official version-pinned `n8nio/n8n:2.31.7` image.
 
 ## Deployment Options
 

@@ -10,7 +10,7 @@ This guide covers security for the n8n deployment running in WSL2 with external 
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Image Versions | Pinned | n8n:2.1.4, postgres:16.11-alpine, redis:7.4.7-alpine |
+| Image Versions | Pinned | n8n/runners:2.31.7, postgres:16.11-alpine, redis:7.4.7-alpine |
 | Network Exposure | Localhost + ngrok | Port 5678 local, HTTPS via ngrok tunnel |
 | ngrok OAuth | Enabled | Google OAuth restricted to @aiwithapex.com, @apexwebservices.com |
 | Public Workflow Access | Public | Webhook and form paths bypass OAuth for external services and public forms |
@@ -293,7 +293,8 @@ ls -la scripts/
 
 1. Check for updates periodically:
    ```bash
-   docker pull n8nio/n8n:2.1.4
+   docker pull n8nio/n8n:2.31.7
+   docker pull n8nio/runners:2.31.7
    docker pull postgres:16.11-alpine
    docker pull redis:7.4.7-alpine
    ```

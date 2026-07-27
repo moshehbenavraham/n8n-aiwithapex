@@ -14,7 +14,8 @@ This guide covers:
 
 | Component | Image Tag | Version |
 |-----------|-----------|---------|
-| n8n | n8nio/n8n:2.1.4 | 2.1.4 |
+| n8n | n8nio/n8n:2.31.7 | 2.31.7 |
+| n8n task runners | n8nio/runners:2.31.7 | 2.31.7 |
 | PostgreSQL | postgres:16.11-alpine | 16.11 |
 | Redis | redis:7.4.7-alpine | 7.4.7 |
 
@@ -345,6 +346,7 @@ Track previous versions here for reference:
 | Date | Component | From | To | Notes |
 |------|-----------|------|-----|-------|
 | 2025-12-26 | All | floating | pinned | Initial version pinning |
+| 2026-07-27 | n8n + runners | 2.20.9 | 2.31.7 | Matched main, workers, and external runners; isolated migration rehearsal passed |
 
 ---
 

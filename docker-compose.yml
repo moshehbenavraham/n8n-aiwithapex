@@ -91,7 +91,7 @@ services:
       - n8n-network
 
   n8n:
-    image: ${N8N_IMAGE:-n8nio/n8n:latest}
+    image: ${N8N_IMAGE:-n8nio/n8n:2.31.7}
     pull_policy: ${N8N_PULL_POLICY:-always}
     container_name: n8n-main
     restart: unless-stopped
@@ -241,7 +241,7 @@ services:
   # n8n Worker 1
   # ===========================================
   n8n-worker-1:
-    image: ${N8N_IMAGE:-n8nio/n8n:latest}
+    image: ${N8N_IMAGE:-n8nio/n8n:2.31.7}
     pull_policy: ${N8N_PULL_POLICY:-always}
     container_name: n8n-worker-1
     restart: unless-stopped
@@ -324,7 +324,7 @@ services:
   # n8n Worker 2
   # ===========================================
   n8n-worker-2:
-    image: ${N8N_IMAGE:-n8nio/n8n:latest}
+    image: ${N8N_IMAGE:-n8nio/n8n:2.31.7}
     pull_policy: ${N8N_PULL_POLICY:-always}
     container_name: n8n-worker-2
     restart: unless-stopped
@@ -407,7 +407,7 @@ services:
   # Task Runner for Worker 1
   # ===========================================
   runner-worker-1:
-    image: ${N8N_RUNNERS_IMAGE:-n8nio/runners:latest}
+    image: ${N8N_RUNNERS_IMAGE:-n8nio/runners:2.31.7}
     pull_policy: ${N8N_RUNNERS_PULL_POLICY:-always}
     container_name: n8n-runner-worker-1
     restart: unless-stopped
@@ -453,7 +453,7 @@ services:
   # Task Runner for Worker 2
   # ===========================================
   runner-worker-2:
-    image: ${N8N_RUNNERS_IMAGE:-n8nio/runners:latest}
+    image: ${N8N_RUNNERS_IMAGE:-n8nio/runners:2.31.7}
     pull_policy: ${N8N_RUNNERS_PULL_POLICY:-always}
     container_name: n8n-runner-worker-2
     restart: unless-stopped
